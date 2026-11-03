@@ -31,11 +31,19 @@ let slowInferenceFrames = 0;
 let fastInferenceFrames = 0;
 const MAX_INFERENCE_FPS = 30;
 const ECO_INFERENCE_FPS = 20;
+const ACTIVATION_HOLD_DURATION = 3000;
+const ACTIVATION_FINISH_DELAY = 1250;
+let activationHoldTime = 0;
+let activationLastUpdate = 0;
+let activationTimer = 0;
+let isGameplayActive = false;
+let requiresActivationRelease = false;
 
 camera = new Camera(ui.video, () => {
   stopProcessing();
   ui.setCameraActive(false);
   ui.setProcessing(false);
+  ui.setGameplayActive(false);
   ui.setAIStatus("Webcam đã ngắt kết nối", "error");
   ui.setMessage("Webcam đã bị ngắt. Hãy kiểm tra thiết bị và bật lại camera.", "error");
   resetRecognition();
@@ -62,16 +70,24 @@ async function startSession() {
     if (!camera.isActive) await camera.start();
     ui.setCameraActive(true);
     ui.setProcessing(true);
+    ui.setGameplayActive(false);
     ui.setAIStatus("AI đang nhận diện", "running");
-    ui.setMessage("Đưa một bàn tay vào khung hình và thử nắm hoặc xòe tay.");
+    ui.showActivation();
+    ui.setMessage("Đưa con trỏ tay vào lõi năng lượng ở giữa màn hình.");
     isPaused = false;
     isProcessing = true;
+    isGameplayActive = false;
+    requiresActivationRelease = false;
+    activationHoldTime = 0;
+    activationLastUpdate = 0;
     lastVideoTime = -1;
     resetPerformanceBudget();
     stabilizer.reset();
     handController.reset();
     scheduleFrame();
   } catch (error) {
+    cancelActivation();
+    ui.setGameplayActive(false);
     ui.setAIStatus("Không thể khởi động", "error");
     ui.setMessage(error.message, "error");
     ui.setCameraActive(camera.isActive);
@@ -85,6 +101,7 @@ function stopSession() {
   camera.stop();
   ui.setCameraActive(false);
   ui.setProcessing(false);
+  ui.setGameplayActive(false);
   ui.setAIStatus(
     recognizer ? "Mô hình AI đã sẵn sàng" : "Chưa khởi tạo",
     recognizer ? "ready" : "idle",
@@ -94,7 +111,7 @@ function stopSession() {
 }
 
 function togglePause() {
-  if (!isProcessing) return;
+  if (!isProcessing || !isGameplayActive) return;
   isPaused = !isPaused;
   ui.setProcessing(true, isPaused);
   ui.setAIStatus(isPaused ? "AI đang tạm dừng" : "AI đang nhận diện", isPaused ? "ready" : "running");
@@ -110,12 +127,14 @@ function togglePause() {
 }
 
 function restartSession() {
+  if (isProcessing && !isGameplayActive) return;
   gameEngine.reset();
   if (!isProcessing) {
     startSession();
     return;
   }
   isPaused = false;
+  requiresActivationRelease = false;
   ui.setProcessing(true);
   ui.setAIStatus("AI đang nhận diện", "running");
   ui.setMessage("Đã đặt lại phiên nhận diện. Hãy đưa tay vào khung hình.");
@@ -155,9 +174,10 @@ function processFrame() {
         ui.clearLandmarks();
         handController.reset();
         ui.setCursor(null);
-        ui.setGesture({ ...stabilizer.noHand(), hasHand: false });
+        const noHand = { ...stabilizer.noHand(), hasHand: false };
+        ui.setGesture(noHand);
         ui.setPosition("—", "—");
-        gameEngine.update({
+        handleGameInput({
           cursor: null,
           gesture: "No Hand",
           isStable: true,
@@ -169,6 +189,7 @@ function processFrame() {
     } catch (error) {
       stopProcessing();
       ui.setProcessing(false);
+      ui.setGameplayActive(false);
       ui.clearLandmarks();
       resetRecognition();
       ui.setAIStatus("Lỗi xử lý AI", "error");
@@ -200,7 +221,7 @@ function updateHandResult(result, landmarks) {
     categoryName,
     geometricOpenPalm: stabilized.geometricOpenPalm,
   });
-  gameEngine.update({
+  handleGameInput({
     cursor: cursorPoint,
     gesture,
     isStable: isStableGesture,
@@ -212,6 +233,66 @@ function updateHandResult(result, landmarks) {
   ui.setPosition(normalizedX, normalizedY);
   ui.overlayDescription.textContent =
     `Tâm lòng bàn tay · X ${normalizedX}% / Y ${normalizedY}%`;
+}
+
+function handleGameInput(input) {
+  if (!isGameplayActive) {
+    updateActivation(input);
+    return;
+  }
+
+  if (requiresActivationRelease) {
+    if (!input.hasHand || (input.isStable && input.gesture !== "Closed_Fist")) {
+      requiresActivationRelease = false;
+    } else {
+      return;
+    }
+  }
+
+  gameEngine.update(input);
+}
+
+function updateActivation({ cursor, gesture, isStable, hasHand }) {
+  const cursorInside = ui.isActivationTarget(cursor);
+  const isClosedFist = hasHand && isStable && gesture === "Closed_Fist";
+  const activationInterrupted =
+    !hasHand || !cursorInside || (isStable && gesture !== "Closed_Fist");
+
+  if (activationInterrupted) {
+    activationHoldTime = 0;
+    if (activationTimer) {
+      window.clearTimeout(activationTimer);
+      activationTimer = 0;
+    }
+  } else if (isClosedFist && activationLastUpdate) {
+    activationHoldTime += Math.min(performance.now() - activationLastUpdate, 100);
+  }
+
+  activationLastUpdate = performance.now();
+  const progress = Math.min(activationHoldTime / ACTIVATION_HOLD_DURATION, 1);
+  ui.setActivationProgress(progress, cursorInside, isClosedFist);
+
+  if (progress === 1 && !activationTimer) {
+    activationTimer = window.setTimeout(completeActivation, ACTIVATION_FINISH_DELAY);
+  }
+}
+
+function completeActivation() {
+  activationTimer = 0;
+  if (!isProcessing || isPaused || isGameplayActive || activationHoldTime < ACTIVATION_HOLD_DURATION) return;
+  isGameplayActive = true;
+  requiresActivationRelease = true;
+  ui.hideActivation();
+  ui.setGameplayActive(true);
+  ui.setMessage("Trò chơi bắt đầu! Nhặt pin bằng cách nắm tay.");
+}
+
+function cancelActivation() {
+  window.clearTimeout(activationTimer);
+  activationTimer = 0;
+  activationHoldTime = 0;
+  activationLastUpdate = 0;
+  ui.hideActivation();
 }
 
 function updateFPS() {
@@ -271,6 +352,9 @@ function resetRecognition() {
 function stopProcessing() {
   isProcessing = false;
   isPaused = false;
+  isGameplayActive = false;
+  requiresActivationRelease = false;
+  cancelActivation();
   if (animationFrameId) cancelAnimationFrame(animationFrameId);
   animationFrameId = 0;
 }

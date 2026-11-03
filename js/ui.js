@@ -69,6 +69,12 @@ export class GameUI {
     this.cameraButton = document.querySelector("#camera-button");
     this.pauseButton = document.querySelector("#pause-button");
     this.restartButton = document.querySelector("#restart-button");
+    this.activationOverlay = document.querySelector("#activation-overlay");
+    this.activationOrb = document.querySelector("#activation-orb");
+    this.activationTitle = document.querySelector("#activation-title");
+    this.activationHint = document.querySelector("#activation-hint");
+    this.activationProgress = document.querySelector(".activation-progress");
+    this.activationProgressBar = document.querySelector("#activation-progress-bar");
     this.batteryState = "";
     this.robotChargeTimer = 0;
     this.quizOverlay = document.querySelector("#quiz-overlay");
@@ -103,12 +109,63 @@ export class GameUI {
   }
 
   setProcessing(active, paused = false) {
-    this.pauseButton.disabled = !active;
-    this.restartButton.disabled = !active;
     this.pauseButton.innerHTML = paused
       ? '<span aria-hidden="true">▶</span> TIẾP TỤC AI'
       : '<span aria-hidden="true">Ⅱ</span> TẠM DỪNG AI';
     this.trackingLabel.hidden = !active || paused;
+  }
+
+  setGameplayActive(active) {
+    this.pauseButton.disabled = !active;
+    this.restartButton.disabled = !active;
+  }
+
+  showActivation() {
+    this.activationOverlay.hidden = false;
+    this.stage.dataset.activation = "true";
+    this.setActivationProgress(0, false, false);
+  }
+
+  hideActivation() {
+    this.activationOverlay.hidden = true;
+    delete this.stage.dataset.activation;
+  }
+
+  setActivationProgress(progress, cursorInside, fistClosed) {
+    const boundedProgress = Math.max(0, Math.min(1, progress));
+    this.activationProgressBar.style.width = `${boundedProgress * 100}%`;
+    this.activationProgress.setAttribute("aria-valuenow", String(Math.round(boundedProgress * 100)));
+    this.activationOverlay.dataset.charging = String(boundedProgress > 0);
+
+    if (boundedProgress >= 1) {
+      this.activationTitle.textContent = "NĂNG LƯỢNG ĐÃ SẴN SÀNG";
+      this.activationHint.textContent = "Đang mở màn chơi...";
+      this.activationOverlay.dataset.complete = "true";
+    } else if (!cursorInside) {
+      this.activationTitle.textContent = "ĐƯA TAY VÀO LÕI NĂNG LƯỢNG";
+      this.activationHint.textContent = "Trỏ con trỏ vào lõi ở giữa màn hình";
+      delete this.activationOverlay.dataset.complete;
+    } else if (!fistClosed) {
+      this.activationTitle.textContent = "ĐÃ BẮT ĐƯỢC TAY";
+      this.activationHint.textContent = "Nắm tay để truyền năng lượng";
+      delete this.activationOverlay.dataset.complete;
+    } else {
+      this.activationTitle.textContent = "ĐANG NẠP NĂNG LƯỢNG";
+      this.activationHint.textContent = "Giữ nắm tay đủ 3 giây để giải phóng năng lượng";
+      delete this.activationOverlay.dataset.complete;
+    }
+  }
+
+  isActivationTarget(point) {
+    if (!point) return false;
+    const bounds = this.activationOrb.getBoundingClientRect();
+    const stage = this.stage.getBoundingClientRect();
+    const cursorX = stage.left + point.x * stage.width;
+    const cursorY = stage.top + point.y * stage.height;
+    const centerX = bounds.left + bounds.width / 2;
+    const centerY = bounds.top + bounds.height / 2;
+    const radius = Math.max(bounds.width, bounds.height) * 0.62;
+    return Math.hypot(cursorX - centerX, cursorY - centerY) <= radius;
   }
 
   setLoading(loading) {

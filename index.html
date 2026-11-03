@@ -69,6 +69,34 @@
                 </svg>
               </button>
             </div>
+            <section
+              class="activation-overlay"
+              id="activation-overlay"
+              aria-live="polite"
+              aria-label="Kích hoạt trò chơi bằng cử chỉ tay"
+              hidden
+            >
+              <div class="activation-shockwave" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="activation-content">
+                <div class="activation-orb" id="activation-orb" aria-hidden="true">
+                  <span>⚡</span>
+                </div>
+                <strong id="activation-title">ĐƯA TAY VÀO LÕI NĂNG LƯỢNG</strong>
+                <span id="activation-hint">Trỏ con trỏ vào lõi, rồi nắm tay để bắt đầu</span>
+                <div
+                  class="activation-progress"
+                  role="progressbar"
+                  aria-label="Tiến trình kích hoạt trò chơi"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="0"
+                >
+                  <span id="activation-progress-bar"></span>
+                </div>
+              </div>
+            </section>
             <section class="game-hud" aria-label="Thống kê trò chơi">
               <div class="game-stats">
                 <div class="game-stat">
