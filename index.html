@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="ENERGY ROBOT - phiên bản 5 trò chơi AI điều khiển bằng cử chỉ tay."
+    />
+    <meta name="theme-color" content="#07111f" />
+    <title>ENERGY ROBOT | Hand AI - Version 5</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./css/style.css" />
+    <script type="module" src="./js/main.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="ENERGY ROBOT - Trang chủ">
+          <span class="brand-mark" aria-hidden="true">ER</span>
+          <span class="brand-copy">
+            <strong>ENERGY ROBOT</strong>
+            <span>GIẢI CỨU ROBOT BẰNG CỬ CHỈ TAY</span>
+          </span>
+        </a>
+        <div class="version-chip"><span></span> VERSION 5 · MISSION CONTROL</div>
+      </header>
+
+      <section class="intro">
+        <div>
+              <p class="eyebrow">TRUNG TÂM ĐIỀU KHIỂN</p>
+              <h1>Chào mừng đến <span>trạm năng lượng</span></h1>
+          <p class="intro-copy">
+            Nhặt pin ở bên phải, nạp cho robot, rồi trỏ vào đáp án If–Then và nắm tay để xác nhận.
+          </p>
+        </div>
+        <div class="privacy-note">
+          <span class="privacy-icon" aria-hidden="true">◈</span>
+          <span><strong>Riêng tư trên thiết bị</strong><br />Video không được tải lên máy chủ</span>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="Bảng điều khiển nhận diện bàn tay">
+        <section class="camera-panel panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">01 / ROBOT RESCUE</p>
+              <h2>Nạp năng lượng cho robot</h2>
+            </div>
+          </div>
+
+          <div class="camera-stage" id="camera-stage">
+            <div class="camera-tools">
+              <div class="live-badge" id="camera-badge" data-state="off">
+                <span class="status-dot"></span>
+                <span id="camera-badge-text">CAMERA TẮT</span>
+              </div>
+              <button class="fullscreen-button" id="fullscreen-button" type="button" aria-label="Toàn màn hình" title="Toàn màn hình">
+                <svg class="fullscreen-icon fullscreen-icon--enter" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 4H4v4M16 4h4v4M4 16v4h4m12-4v4h-4" />
+                </svg>
+                <svg class="fullscreen-icon fullscreen-icon--exit" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 8h4V4m8 0v4h4M8 20v-4H4m16 0h-4v4" />
+                </svg>
+              </button>
+            </div>
+            <section class="game-hud" aria-label="Thống kê trò chơi">
+              <div class="game-stats">
+                <div class="game-stat">
+                  <span>ĐIỂM SỐ</span>
+                  <strong id="score-value">0</strong>
+                </div>
+                <div class="game-stat">
+                  <span>PIN ĐÃ NẠP</span>
+                  <strong id="battery-count-value">0 <small>ĐÃ NẠP</small></strong>
+                </div>
+              </div>
+              <div class="robot-energy-row">
+                <span>Năng lượng</span>
+                <strong id="robot-energy-value">0%</strong>
+              </div>
+              <div
+                class="robot-energy-track"
+                id="robot-energy-track"
+                role="progressbar"
+                aria-label="Năng lượng robot"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <span id="robot-energy-bar"></span>
+              </div>
+            </section>
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="landmark-canvas" aria-label="Khung xương bàn tay được AI nhận diện"></canvas>
+            <canvas class="effects-canvas" id="effects-canvas" aria-hidden="true"></canvas>
+            <div class="robot-character" id="robot-character" data-state="off" role="img" aria-label="Robot đang hết năng lượng">
+              <div class="robot-status" id="robot-stage-status">OFFLINE</div>
+              <svg class="robot-svg" viewBox="0 0 128 160" aria-hidden="true">
+                <path class="robot-antenna" d="M64 16V8" />
+                <circle class="robot-antenna-light" cx="64" cy="7" r="5" />
+                <rect class="robot-head" x="30" y="18" width="68" height="48" rx="15" />
+                <rect class="robot-face" x="37" y="26" width="54" height="31" rx="10" />
+                <circle class="robot-eye" cx="52" cy="41" r="4" />
+                <circle class="robot-eye" cx="76" cy="41" r="4" />
+                <path class="robot-mouth" d="M55 50h18" />
+                <path class="robot-neck" d="M57 67v8m14-8v8" />
+                <rect class="robot-body" x="22" y="74" width="84" height="58" rx="17" />
+                <rect class="robot-core" x="40" y="85" width="48" height="34" rx="9" />
+                <path class="robot-core-bolt" d="m67 89-13 15h9l-2 11 14-17h-9l1-9Z" />
+                <path class="robot-arm" d="M22 87 11 94v21l12 4m83-32 11 7v21l-12 4" />
+                <path class="robot-leg" d="M45 133v11m38-11v11" />
+                <path class="robot-foot" d="M35 145h20m28 0h20" />
+              </svg>
+              <div
+                class="robot-receiver"
+                id="robot-receiver"
+                role="img"
+                aria-label="Vùng tiếp nhận pin năng lượng"
+              >
+                <span class="receiver-ring"></span>
+                <span class="receiver-mark">+</span>
+              </div>
+              <span class="robot-caption">ENERGY BOT</span>
+            </div>
+            <div class="battery-token" id="battery-token" role="img" aria-label="Pin năng lượng" hidden>
+              <span class="battery-glow"></span>
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path class="battery-outline" d="M18 7h12v5h5a3 3 0 0 1 3 3v23a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V15a3 3 0 0 1 3-3h5V7Z" />
+                <path class="battery-fill" d="M16 19h16v16H16z" />
+                <path class="battery-bolt" d="m25 20-7 9h5l-1 6 8-10h-5l1-5Z" />
+              </svg>
+              <span class="battery-label" id="battery-label">ENERGY</span>
+            </div>
+            <div class="virtual-cursor" id="virtual-cursor" role="img" aria-label="Con trỏ bàn tay ảo" hidden>
+              <span class="cursor-ring"></span>
+              <span class="cursor-core"></span>
+            </div>
+            <section class="quiz-overlay" id="quiz-overlay" aria-live="polite" hidden>
+              <div class="quiz-card">
+                <span class="eyebrow">THỬ THÁCH IF–THEN</span>
+                <h3 class="quiz-question" id="quiz-question"></h3>
+                <div class="quiz-answers" id="quiz-answers"></div>
+                <p class="quiz-instruction" id="quiz-instruction">Trỏ lòng bàn tay vào đáp án, rồi nắm tay để xác nhận.</p>
+              </div>
+            </section>
+            <div class="camera-overlay" id="camera-overlay">
+              <div class="scan-icon" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+                <i>✋</i>
+              </div>
+              <strong id="overlay-title">Sẵn sàng quét bàn tay</strong>
+              <span id="overlay-description">Bật webcam để bắt đầu phiên nhận diện</span>
+            </div>
+            <div class="camera-corner camera-corner--tl"></div>
+            <div class="camera-corner camera-corner--tr"></div>
+            <div class="camera-corner camera-corner--bl"></div>
+            <div class="camera-corner camera-corner--br"></div>
+            <div class="tracking-label" id="tracking-label" hidden>
+              <span class="tracking-pulse"></span> HAND TRACKING
+            </div>
+          </div>
+          <div class="game-message" id="game-message" role="status" aria-live="polite">
+            <span class="game-message-icon" id="game-message-icon" aria-hidden="true">🔋</span>
+            <span id="game-message-text">Tìm pin trên sân chơi. Đến gần rồi nắm tay để nhặt.</span>
+          </div>
+
+          <div class="camera-controls">
+            <button class="button button-primary" id="start-button" type="button">
+              <span aria-hidden="true">▶</span> START GAME
+            </button>
+            <button class="button button-secondary" id="camera-button" type="button">
+              <span aria-hidden="true">◉</span> BẬT WEBCAM
+            </button>
+            <button class="button button-quiet" id="pause-button" type="button" disabled>
+              <span aria-hidden="true">Ⅱ</span> TẠM DỪNG AI
+            </button>
+            <button class="button button-quiet" id="restart-button" type="button" disabled>
+              <span aria-hidden="true">↻</span> CHƠI LẠI
+            </button>
+            <button
+              class="button button-quiet sound-button"
+              id="sound-button"
+              type="button"
+              aria-pressed="true"
+            >
+              <span aria-hidden="true">♫</span> ÂM THANH: BẬT
+            </button>
+          </div>
+          <p class="status-message" id="status-message" role="status" aria-live="polite">
+            Đang chờ bạn bắt đầu.
+          </p>
+        </section>
+
+        <aside class="insights-column">
+          <section class="panel ai-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">02 / AI TELEMETRY</p>
+                <h2>Trạng thái AI</h2>
+              </div>
+              <span class="ai-orb" id="ai-orb" data-state="idle" aria-hidden="true"></span>
+            </div>
+
+            <div class="ai-status-row">
+              <span class="status-dot" id="ai-status-dot"></span>
+              <span id="ai-status-text">Chưa khởi tạo</span>
+            </div>
+
+            <div class="gesture-card">
+              <div class="gesture-card-top">
+                <span class="eyebrow">CỬ CHỈ HIỆN TẠI</span>
+                <span class="gesture-icon" id="gesture-icon" aria-hidden="true">—</span>
+              </div>
+              <strong class="gesture-name" id="gesture-name">Chưa nhận diện</strong>
+              <div class="confidence-row">
+                <span>Độ tin cậy</span>
+                <strong id="confidence-value">0%</strong>
+              </div>
+              <div
+                class="confidence-track"
+                role="progressbar"
+                aria-label="Độ tin cậy nhận diện"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+                id="confidence-track"
+              >
+                <span id="confidence-bar"></span>
+              </div>
+              <span class="confirm-hint" id="confirm-hint">AI: ≥55% · xác nhận qua 4 khung hình</span>
+            </div>
+
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <span>FPS xử lý</span>
+                <strong id="fps-value">—</strong>
+                <small class="performance-mode" id="performance-mode">MỤC TIÊU 30 FPS</small>
+              </div>
+              <div class="metric-card">
+                <span>Số bàn tay</span>
+                <strong id="hands-value">0 <small>/ 1</small></strong>
+              </div>
+              <div class="metric-card metric-card--wide">
+                <span>Tâm lòng bàn tay · X / Y</span>
+                <strong id="position-value">— / —</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel robot-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">03 / ROBOT ENERGY</p>
+                <h2>Tiến trình nạp</h2>
+              </div>
+              <span class="robot-state-chip" id="robot-state-chip" data-state="off">
+                <span class="status-dot"></span>
+                <span id="robot-state-text">ĐANG TẮT</span>
+              </span>
+            </div>
+            <p class="robot-hint" id="robot-hint">Đưa pin đến vùng phát sáng trên robot.</p>
+            <div class="mission-progress">
+              <div class="mission-progress-heading">
+                <span>NĂNG LƯỢNG ROBOT</span>
+                <strong id="mission-progress-label">0% NĂNG LƯỢNG</strong>
+              </div>
+              <div
+                class="mission-track"
+                id="mission-progress-track"
+                role="progressbar"
+                aria-label="Tiến trình nhiệm vụ"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <span id="mission-progress-bar"></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel guide-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">04 / ĐIỀU KHIỂN PIN</p>
+                <h2>Nhặt · Giữ · Nạp · Trả lời</h2>
+              </div>
+            </div>
+            <div class="gesture-guide">
+              <div class="guide-item">
+                <span class="guide-emoji" aria-hidden="true">☝️</span>
+                <span><strong>Đưa tay đến gần pin bên trái</strong><small>Pin bay chậm qua lại · con trỏ chạm để nhặt</small></span>
+                <span class="guide-indicator"></span>
+              </div>
+              <div class="guide-item">
+                <span class="guide-emoji" aria-hidden="true">✊</span>
+                <span><strong>Nắm tay</strong><small>Nhặt và giữ pin gần con trỏ</small></span>
+                <span class="guide-indicator"></span>
+              </div>
+              <div class="guide-item">
+                <span class="guide-emoji" aria-hidden="true">✋</span>
+                <span><strong>Xòe tay trong vùng robot</strong><small>Mỗi pin nạp thêm 20%</small></span>
+                <span class="guide-indicator"></span>
+              </div>
+              <div class="guide-item">
+                <span class="guide-emoji" aria-hidden="true">⌖</span>
+                <span><strong>Đủ 100%: trả lời If–Then</strong><small>Đúng: robot sáng · sai: mất điểm, chơi lại</small></span>
+                <span class="guide-indicator"></span>
+              </div>
+            </div>
+            <p class="guide-footnote">
+              Sau khi nạp pin, trỏ tâm lòng bàn tay vào đáp án cần chọn. Nắm tay ổn định để xác nhận.
+            </p>
+          </section>
+        </aside>
+      </section>
+
+      <footer class="footer">
+        <span>ENERGY ROBOT <span class="footer-separator">/</span> V5 MISSION CONTROL</span>
+        <span>MediaPipe Gesture Recognizer · Xử lý trực tiếp trên trình duyệt</span>
+      </footer>
+    </main>
+  </body>
+</html>
