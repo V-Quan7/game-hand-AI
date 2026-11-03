@@ -37,6 +37,7 @@ let activationHoldTime = 0;
 let activationLastUpdate = 0;
 let activationTimer = 0;
 let isGameplayActive = false;
+let isModeSelection = false;
 let requiresActivationRelease = false;
 
 camera = new Camera(ui.video, () => {
@@ -44,6 +45,7 @@ camera = new Camera(ui.video, () => {
   ui.setCameraActive(false);
   ui.setProcessing(false);
   ui.setGameplayActive(false);
+  ui.hideModeSelection();
   ui.setAIStatus("Webcam đã ngắt kết nối", "error");
   ui.setMessage("Webcam đã bị ngắt. Hãy kiểm tra thiết bị và bật lại camera.", "error");
   resetRecognition();
@@ -71,6 +73,7 @@ async function startSession() {
     ui.setCameraActive(true);
     ui.setProcessing(true);
     ui.setGameplayActive(false);
+    ui.hideModeSelection();
     ui.setAIStatus("AI đang nhận diện", "running");
     ui.showActivation();
     ui.setMessage("Đưa con trỏ tay vào lõi năng lượng ở giữa màn hình.");
@@ -237,6 +240,10 @@ function updateHandResult(result, landmarks) {
 
 function handleGameInput(input) {
   if (!isGameplayActive) {
+    if (isModeSelection) {
+      updateModeSelection(input);
+      return;
+    }
     updateActivation(input);
     return;
   }
@@ -280,11 +287,43 @@ function updateActivation({ cursor, gesture, isStable, hasHand }) {
 function completeActivation() {
   activationTimer = 0;
   if (!isProcessing || isPaused || isGameplayActive || activationHoldTime < ACTIVATION_HOLD_DURATION) return;
-  isGameplayActive = true;
+  isModeSelection = true;
   requiresActivationRelease = true;
   ui.hideActivation();
+  ui.showModeSelection();
+  ui.setMessage("Chọn chế độ chơi để bắt đầu nhiệm vụ.");
+}
+
+function updateModeSelection({ cursor, gesture, isStable, hasHand }) {
+  const selectedIndex = hasHand && cursor ? ui.getModeAt(cursor) : -1;
+  ui.setModeSelection(selectedIndex, !requiresActivationRelease);
+
+  if (requiresActivationRelease) {
+    if (!hasHand || (isStable && gesture !== "Closed_Fist")) {
+      requiresActivationRelease = false;
+      ui.setModeSelection(selectedIndex, true);
+    }
+    return;
+  }
+
+  if (selectedIndex >= 0 && isStable && gesture === "Closed_Fist") {
+    selectGameMode(ui.modeButtons[selectedIndex].dataset.mode);
+  }
+}
+
+function selectGameMode(mode) {
+  if (!isProcessing || !isModeSelection) return;
+  gameEngine.setMode(mode);
+  isModeSelection = false;
+  isGameplayActive = true;
+  requiresActivationRelease = true;
+  ui.hideModeSelection();
   ui.setGameplayActive(true);
-  ui.setMessage("Trò chơi bắt đầu! Nhặt pin bằng cách nắm tay.");
+  ui.setMessage(
+    mode === "hard"
+      ? "SIÊU KHÓ: Nắm tay trên kiếm cạnh robot để nhặt."
+      : "Đưa tay đến gần pin, nắm để nhặt và xòe tay trong vùng robot để nạp.",
+  );
 }
 
 function cancelActivation() {
@@ -353,8 +392,10 @@ function stopProcessing() {
   isProcessing = false;
   isPaused = false;
   isGameplayActive = false;
+  isModeSelection = false;
   requiresActivationRelease = false;
   cancelActivation();
+  ui.hideModeSelection();
   if (animationFrameId) cancelAnimationFrame(animationFrameId);
   animationFrameId = 0;
 }
@@ -369,20 +410,24 @@ ui.cameraButton.addEventListener("click", () => {
 });
 ui.pauseButton.addEventListener("click", togglePause);
 ui.restartButton.addEventListener("click", restartSession);
+ui.easyPlayAgainButton.addEventListener("click", restartSession);
+ui.modeButtons.forEach((button) => {
+  button.addEventListener("click", () => selectGameMode(button.dataset.mode));
+});
 ui.soundButton.addEventListener("click", toggleSound);
 ui.fullscreenButton.addEventListener("click", toggleFullscreen);
 document.addEventListener("fullscreenchange", () => {
-  ui.setFullscreen(document.fullscreenElement === ui.stage);
+  ui.setFullscreen(document.fullscreenElement === ui.cameraPanel);
 });
 
 async function toggleFullscreen() {
   try {
-    if (document.fullscreenElement === ui.stage) {
+    if (document.fullscreenElement === ui.cameraPanel) {
       await document.exitFullscreen();
       return;
     }
     if (document.fullscreenElement) await document.exitFullscreen();
-    await ui.stage.requestFullscreen();
+    await ui.cameraPanel.requestFullscreen();
   } catch (error) {
     ui.setMessage(`Không thể đổi chế độ toàn màn hình: ${error.message}`, "error");
   }

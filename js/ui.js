@@ -31,11 +31,13 @@ export class GameUI {
     this.robotStateChip = document.querySelector("#robot-state-chip");
     this.robotStateText = document.querySelector("#robot-state-text");
     this.robotEnergyValue = document.querySelector("#robot-energy-value");
+    this.robotEnergyLabel = document.querySelector("#robot-energy-label");
     this.robotEnergyTrack = document.querySelector("#robot-energy-track");
     this.robotEnergyBar = document.querySelector("#robot-energy-bar");
     this.robotHint = document.querySelector("#robot-hint");
     this.scoreValue = document.querySelector("#score-value");
     this.batteryCountValue = document.querySelector("#battery-count-value");
+    this.batteryCountLabel = document.querySelector("#battery-count-label");
     this.missionProgressLabel = document.querySelector("#mission-progress-label");
     this.missionProgressTrack = document.querySelector("#mission-progress-track");
     this.missionProgressBar = document.querySelector("#mission-progress-bar");
@@ -45,6 +47,7 @@ export class GameUI {
     this.gameMessageText = document.querySelector("#game-message-text");
     this.context = this.canvas.getContext("2d");
     this.stage = document.querySelector("#camera-stage");
+    this.cameraPanel = document.querySelector(".camera-panel");
     this.cameraBadge = document.querySelector("#camera-badge");
     this.cameraBadgeText = document.querySelector("#camera-badge-text");
     this.fullscreenButton = document.querySelector("#fullscreen-button");
@@ -75,12 +78,30 @@ export class GameUI {
     this.activationHint = document.querySelector("#activation-hint");
     this.activationProgress = document.querySelector(".activation-progress");
     this.activationProgressBar = document.querySelector("#activation-progress-bar");
+    this.modeSelectOverlay = document.querySelector("#mode-select-overlay");
+    this.modeButtons = [...document.querySelectorAll(".mode-option")];
+    this.modeSelectHint = this.modeSelectOverlay.querySelector(".mode-select-card > p");
+    this.gameModeLabel = document.querySelector("#game-mode-label");
+    this.hardBatteryTokens = [...document.querySelectorAll(".hard-battery-token")];
+    this.energySword = document.querySelector("#energy-sword");
+    this.easyMission = document.querySelector("#easy-mission");
+    this.easyQuestionProgress = document.querySelector("#easy-question-progress");
+    this.easySituationIllustration = document.querySelector("#easy-situation-illustration");
+    this.easySituationTitle = document.querySelector("#easy-situation-title");
+    this.easySituationDescription = document.querySelector("#easy-situation-description");
+    this.easyQuestionPrompt = document.querySelector("#easy-question-prompt");
+    this.easyBlocksLayer = document.querySelector("#easy-blocks-layer");
+    this.easyCompleteOverlay = document.querySelector("#easy-complete-overlay");
+    this.easyFinalScore = document.querySelector("#easy-final-score");
+    this.easyPlayAgainButton = document.querySelector("#easy-play-again");
     this.batteryState = "";
     this.robotChargeTimer = 0;
+    this.easyFeedbackTimer = 0;
     this.quizOverlay = document.querySelector("#quiz-overlay");
     this.quizQuestion = document.querySelector("#quiz-question");
     this.quizAnswers = document.querySelector("#quiz-answers");
     this.quizInstruction = document.querySelector("#quiz-instruction");
+    this.quizEyebrow = this.quizOverlay.querySelector(".eyebrow");
   }
 
   setAIStatus(message, state = "idle") {
@@ -129,6 +150,206 @@ export class GameUI {
   hideActivation() {
     this.activationOverlay.hidden = true;
     delete this.stage.dataset.activation;
+  }
+
+  showModeSelection() {
+    this.modeSelectOverlay.hidden = false;
+    this.stage.dataset.modeSelection = "true";
+    this.setModeSelection(-1, false);
+  }
+
+  hideModeSelection() {
+    this.modeSelectOverlay.hidden = true;
+    delete this.stage.dataset.modeSelection;
+    this.setModeSelection(-1, false);
+  }
+
+  getModeAt(point) {
+    if (!point) return -1;
+    const stage = this.stage.getBoundingClientRect();
+    const x = stage.left + point.x * stage.width;
+    const y = stage.top + point.y * stage.height;
+    return this.modeButtons.findIndex((button) => {
+      const bounds = button.getBoundingClientRect();
+      return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
+    });
+  }
+
+  setModeSelection(index, canConfirm) {
+    this.modeButtons.forEach((button, buttonIndex) => {
+      button.classList.toggle("is-pointed", buttonIndex === index);
+    });
+    if (index < 0) {
+      this.modeSelectHint.textContent = "Đưa tay vào chế độ muốn chơi, rồi nắm tay để xác nhận.";
+      return;
+    }
+    this.modeSelectHint.textContent = canConfirm
+      ? "Đang chọn chế độ này — nắm tay để bắt đầu."
+      : "Thả nắm tay để sẵn sàng chọn chế độ.";
+  }
+
+  setGameMode(mode) {
+    const isHard = mode === "hard";
+    this.stage.dataset.mode = mode;
+    this.gameModeLabel.textContent = isHard ? "SIÊU KHÓ" : "DỄ";
+    this.robotEnergyLabel.textContent = isHard ? "NẠP KIẾM" : "TIẾN TRÌNH";
+    this.batteryCountLabel.textContent = isHard ? "PIN CHẠM KIẾM" : "CÂU ĐÃ XONG";
+    this.batteryToken.hidden = true;
+    this.hardBatteryTokens.forEach((token) => {
+      token.hidden = true;
+    });
+    this.energySword.hidden = true;
+    this.batteryCountValue.innerHTML = isHard
+      ? '0 <small>CHẠM KIẾM</small>'
+      : '0 <small>HOÀN THÀNH</small>';
+    this.robotEnergyValue.textContent = "0%";
+    this.robotEnergyBar.style.width = "0%";
+    this.robotEnergyTrack.setAttribute("aria-valuenow", "0");
+    this.robotEnergyTrack.setAttribute(
+      "aria-label",
+      isHard ? "Tiến trình nạp kiếm" : "Năng lượng robot",
+    );
+    if (!isHard) this.robotHint.textContent = "Chọn đúng khối lệnh để khắc phục tình huống.";
+  }
+
+  setEasyProgress(score, completed, total) {
+    const progress = Math.round((completed / total) * 100);
+    this.scoreValue.textContent = String(score);
+    this.batteryCountLabel.textContent = "CÂU ĐÃ XONG";
+    this.batteryCountValue.innerHTML = `${completed} <small>/ ${total}</small>`;
+    this.robotEnergyLabel.textContent = "TIẾN TRÌNH";
+    this.robotEnergyValue.textContent = `${completed}/${total}`;
+    this.robotEnergyBar.style.width = `${progress}%`;
+    this.robotEnergyTrack.setAttribute("aria-valuenow", String(progress));
+    this.robotEnergyTrack.setAttribute("aria-label", "Tiến trình câu hỏi");
+  }
+
+  showEasyQuestion(question, index, total) {
+    this.easyQuestionProgress.textContent = `CÂU ${index + 1}/${total}`;
+    this.easySituationIllustration.textContent = question.icon;
+    this.easySituationTitle.textContent = question.title;
+    this.easySituationDescription.textContent = question.situation;
+    this.easyQuestionPrompt.textContent = question.prompt;
+    this.easyMission.hidden = false;
+  }
+
+  setEasyBlocks(blocks) {
+    this.easyBlocksLayer.replaceChildren();
+    blocks.forEach((block) => {
+      const token = document.createElement("div");
+      const image = document.createElement("img");
+      const label = document.createElement("span");
+      token.className = "logic-block";
+      token.dataset.blockId = block.id;
+      token.dataset.blockType = block.type;
+      token.setAttribute("role", "img");
+      token.setAttribute("aria-label", `Khối lệnh ${block.label}`);
+      image.src = block.src;
+      image.alt = "";
+      image.draggable = false;
+      label.textContent = block.label;
+      token.append(image, label);
+      this.easyBlocksLayer.append(token);
+    });
+    this.easyBlocksLayer.hidden = blocks.length === 0;
+    this.updateEasyBlocks(blocks);
+  }
+
+  updateEasyBlocks(blocks) {
+    for (const block of blocks) {
+      const token = [...this.easyBlocksLayer.children]
+        .find((element) => element.dataset.blockId === block.id);
+      if (!token) continue;
+      token.style.left = `${block.position.x * 100}%`;
+      token.style.top = `${block.position.y * 100}%`;
+      token.dataset.held = String(block.isHeld);
+    }
+  }
+
+  setEasyMessage(message, type = "info") {
+    this.gameMessageIcon.textContent = type === "error" ? "⚠️" : "🧩";
+    this.gameMessageText.textContent = message;
+    this.gameMessage.dataset.state = type === "error" ? "easy-incorrect" : "easy-ready";
+  }
+
+  setEasyResponse(correct, message, action = "") {
+    if (this.easyFeedbackTimer) window.clearTimeout(this.easyFeedbackTimer);
+    this.robotCharacter.dataset.response = correct ? "correct" : "incorrect";
+    this.robotStageStatus.textContent = correct
+      ? action
+      : "THỬ LẠI";
+    this.gameMessageIcon.textContent = correct ? "✅" : "❌";
+    this.gameMessageText.textContent = message;
+    this.gameMessage.dataset.state = correct ? "easy-correct" : "easy-incorrect";
+    this.easyFeedbackTimer = window.setTimeout(() => {
+      delete this.robotCharacter.dataset.response;
+      const energy = Number(this.robotCharacter.dataset.energy ?? 0);
+      this.robotStageStatus.textContent = this.robotCharacter.dataset.state === "on"
+        ? "ACTIVE"
+        : energy > 0 ? `CHARGING ${energy}%` : "OFFLINE";
+      this.easyFeedbackTimer = 0;
+    }, 2000);
+  }
+
+  showEasyCompletion(score) {
+    this.easyMission.hidden = true;
+    this.easyBlocksLayer.hidden = true;
+    this.easyBlocksLayer.replaceChildren();
+    this.easyFinalScore.textContent = String(score);
+    this.easyCompleteOverlay.hidden = false;
+  }
+
+  hideEasyChallenge() {
+    if (this.easyFeedbackTimer) window.clearTimeout(this.easyFeedbackTimer);
+    this.easyFeedbackTimer = 0;
+    this.easyMission.hidden = true;
+    this.easyBlocksLayer.hidden = true;
+    this.easyBlocksLayer.replaceChildren();
+    this.easyCompleteOverlay.hidden = true;
+    delete this.robotCharacter.dataset.response;
+  }
+
+  setHardProgress(hits, maxHits, score) {
+    const boundedHits = Math.max(0, Math.min(maxHits, hits));
+    const progress = Math.round((boundedHits / maxHits) * 100);
+    this.scoreValue.textContent = String(score);
+    this.batteryCountValue.innerHTML =
+      `${boundedHits} <small>CHẠM KIẾM</small>`;
+    this.robotEnergyValue.textContent = `${progress}%`;
+    this.robotEnergyBar.style.width = `${progress}%`;
+    this.robotEnergyTrack.setAttribute("aria-valuenow", String(progress));
+  }
+
+  setHardBatteries(batteries) {
+    this.hardBatteryTokens.forEach((token, index) => {
+      const point = batteries[index]?.position;
+      token.hidden = !point;
+      if (!point) return;
+      token.style.left = `${point.x * 100}%`;
+      token.style.top = `${point.y * 100}%`;
+    });
+  }
+
+  setEnergySword(point, held, charge, visible = true) {
+    this.energySword.hidden = !visible || !point;
+    if (!point) return;
+    this.energySword.style.left = `${point.x * 100}%`;
+    this.energySword.style.top = `${point.y * 100}%`;
+    this.energySword.dataset.held = String(held);
+    this.energySword.dataset.charged = String(charge >= 5);
+    this.energySword.style.setProperty("--sword-charge", String(Math.max(0, Math.min(1, charge / 5))));
+    this.energySword.setAttribute(
+      "aria-label",
+      held
+        ? `Kiếm đang được giữ, đã nạp ${charge} trên 5 pin`
+        : `Kiếm năng lượng, đã nạp ${charge} trên 5 pin`,
+    );
+  }
+
+  setHardMessage(icon, message) {
+    this.gameMessageIcon.textContent = icon;
+    this.gameMessageText.textContent = message;
+    delete this.gameMessage.dataset.state;
   }
 
   setActivationProgress(progress, cursorInside, fistClosed) {
@@ -352,8 +573,9 @@ export class GameUI {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  showQuiz(question) {
+  showQuiz(question, progress = "") {
     this.quizQuestion.textContent = question.prompt;
+    this.quizEyebrow.textContent = progress || "THỬ THÁCH IF–THEN";
     this.quizAnswers.replaceChildren();
     question.answers.forEach((answer, index) => {
       const option = document.createElement("div");
