@@ -111,9 +111,15 @@
               <h2 id="mode-select-title">Chọn chế độ chơi</h2>
               <p>Đưa tay vào chế độ muốn chơi, rồi nắm tay để xác nhận.</p>
               <div class="mode-select-options">
+                <button class="mode-option mode-option--begin" type="button" data-mode="begin">
+                  <span class="mode-option-icon" aria-hidden="true">🧩</span>
+                  <span><strong>Khám Phá</strong><small>Giúp robot qua các tình huống quen thuộc — không cần biết lập
+                      trình</small></span>
+                  <span class="mode-option-arrow" aria-hidden="true">→</span>
+                </button>
                 <button class="mode-option" type="button" data-mode="easy">
                   <span class="mode-option-icon" aria-hidden="true">🔋</span>
-                  <span><strong>DỄ</strong><small>Nhặt pin và nạp năng lượng cho robot</small></span>
+                  <span><strong>Thử thách</strong><small>Nhặt pin và nạp năng lượng cho robot</small></span>
                   <span class="mode-option-arrow" aria-hidden="true">→</span>
                 </button>
                 <button class="mode-option mode-option--hard" type="button" data-mode="hard">
@@ -229,6 +235,30 @@
             </div>
           </section>
           <div class="easy-blocks-layer" id="easy-blocks-layer" aria-label="Các khối lệnh đang rơi" hidden></div>
+          <section class="begin-mission" id="begin-mission" aria-live="polite" hidden>
+            <div class="begin-situation-card">
+              <span class="begin-question-progress" id="begin-question-progress">NHIỆM VỤ 1/5</span>
+              <span class="begin-situation-illustration" id="begin-situation-illustration" aria-hidden="true"></span>
+              <div class="begin-situation-copy">
+                <strong id="begin-situation-title"></strong>
+                <p id="begin-situation-description"></p>
+                <b id="begin-question-prompt"></b>
+              </div>
+            </div>
+            <p class="begin-how-to-play" id="begin-how-to-play">Nắm tay trên đồ vật, mang đến robot rồi xòe tay.</p>
+          </section>
+          <div class="begin-objects-layer" id="begin-objects-layer" aria-label="Đồ vật tương tác" hidden></div>
+          <section class="begin-complete-overlay" id="begin-complete-overlay" aria-live="polite" hidden>
+            <div class="begin-complete-card">
+              <span class="easy-complete-icon" aria-hidden="true">🏆</span>
+              <span class="eyebrow">XƯỞNG CỨU HỘ HOÀN THÀNH</span>
+              <h2>ROBOT ĐÃ ĐƯỢC GIÚP ĐỠ!</h2>
+              <p>Bạn đã xử lý mọi tình huống và học cách ghép điều kiện với hành động.</p>
+              <strong class="easy-final-score">ĐIỂM CỦA BẠN <span id="begin-final-score">0</span></strong>
+              <p id="begin-replay-instruction" aria-live="polite"></p>
+              <button class="button button-primary" id="begin-play-again" type="button">CHƠI LẠI BEGIN</button>
+            </div>
+          </section>
           <section class="easy-complete-overlay" id="easy-complete-overlay" aria-live="polite" hidden>
             <div class="easy-complete-card">
               <span class="easy-complete-icon" aria-hidden="true">🏆</span>
@@ -339,7 +369,7 @@
               <strong id="hands-value">0 <small>/ 1</small></strong>
             </div>
             <div class="metric-card metric-card--wide">
-              <span>Tâm lòng bàn tay · X / Y</span>
+              <span id="position-label">Tâm lòng bàn tay · X / Y</span>
               <strong id="position-value">— / —</strong>
             </div>
           </div>

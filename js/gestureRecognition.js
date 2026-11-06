@@ -44,6 +44,15 @@ export function detectOpenPalm(landmarks) {
   return fourFingersExtended && thumbOpen;
 }
 
+export function detectIndexPointing(landmarks) {
+  if (!landmarks || landmarks.length < 21) return false;
+  const indexExtended = isFingerExtended(landmarks, 5, 6, 8);
+  const otherFingersFolded = [
+    [9, 10, 12], [13, 14, 16], [17, 18, 20],
+  ].every(([mcp, pip, tip]) => !isFingerExtended(landmarks, mcp, pip, tip));
+  return indexExtended && otherFingersFolded;
+}
+
 export async function createGestureRecognizer(onStatus = () => {}) {
   onStatus("Đang tải thư viện MediaPipe...");
   const vision = await FilesetResolver.forVisionTasks(VISION_WASM_URL);
@@ -94,12 +103,15 @@ export class GestureStabilizer {
 
   update(categoryName, score, landmarks) {
     const geometricOpenPalm = detectOpenPalm(landmarks);
+    const indexPointing = detectIndexPointing(landmarks);
     const supportedGesture = categoryName === "Open_Palm" || categoryName === "Closed_Fist";
     const candidate = geometricOpenPalm
       ? "Open_Palm"
-      : supportedGesture && score >= MIN_CONFIDENCE
-        ? categoryName
-        : "Other";
+      : indexPointing
+        ? "Pointing_Up"
+        : supportedGesture && score >= MIN_CONFIDENCE
+          ? categoryName
+          : "Other";
 
     if (candidate === this.candidateGesture) {
       this.candidateCount += 1;
@@ -118,6 +130,7 @@ export class GestureStabilizer {
       confidence: score,
       categoryName,
       geometricOpenPalm,
+      indexPointing,
       stableFrames: this.candidateCount,
     };
   }

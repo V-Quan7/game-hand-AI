@@ -3,6 +3,7 @@ import { MIN_CONFIDENCE } from "./gestureRecognition.js";
 const GESTURE_PRESENTATION = {
   Open_Palm: { label: "Xòe tay", icon: "✋" },
   Closed_Fist: { label: "Nắm tay", icon: "✊" },
+  Pointing_Up: { label: "Chỉ ngón trỏ", icon: "☝️" },
   "No Hand": { label: "Không có tay", icon: "—" },
   Uncertain: { label: "Đang xác nhận...", icon: "⌖" },
   Other: { label: "Cử chỉ khác", icon: "✋" },
@@ -68,6 +69,7 @@ export class GameUI {
     this.performanceMode = document.querySelector("#performance-mode");
     this.handsValue = document.querySelector("#hands-value");
     this.positionValue = document.querySelector("#position-value");
+    this.positionLabel = document.querySelector("#position-label");
     this.startButton = document.querySelector("#start-button");
     this.cameraButton = document.querySelector("#camera-button");
     this.pauseButton = document.querySelector("#pause-button");
@@ -94,6 +96,32 @@ export class GameUI {
     this.easyCompleteOverlay = document.querySelector("#easy-complete-overlay");
     this.easyFinalScore = document.querySelector("#easy-final-score");
     this.easyPlayAgainButton = document.querySelector("#easy-play-again");
+    this.beginMission = document.querySelector("#begin-mission");
+    this.beginQuestionProgress = document.querySelector("#begin-question-progress");
+    this.beginSituationIllustration = document.querySelector("#begin-situation-illustration");
+    this.beginSituationTitle = document.querySelector("#begin-situation-title");
+    this.beginSituationDescription = document.querySelector("#begin-situation-description");
+    this.beginQuestionPrompt = document.querySelector("#begin-question-prompt");
+    this.beginHowToPlay = document.querySelector("#begin-how-to-play");
+    this.beginObjectsLayer = document.querySelector("#begin-objects-layer");
+    this.beginCompleteOverlay = document.querySelector("#begin-complete-overlay");
+    this.beginFinalScore = document.querySelector("#begin-final-score");
+    this.beginPlayAgainButton = document.querySelector("#begin-play-again");
+    this.beginReplayInstruction = document.querySelector("#begin-replay-instruction");
+    this.guideEyebrow = document.querySelector(".guide-panel .eyebrow");
+    this.guideHeading = document.querySelector(".guide-panel h2");
+    this.guideItems = [...document.querySelectorAll(".guide-panel .guide-item")];
+    this.guideFootnote = document.querySelector(".guide-footnote");
+    this.defaultGuide = {
+      eyebrow: this.guideEyebrow.textContent,
+      heading: this.guideHeading.textContent,
+      items: this.guideItems.map((item) => ({
+        icon: item.querySelector(".guide-emoji").textContent,
+        title: item.querySelector("strong").textContent,
+        description: item.querySelector("small").textContent,
+      })),
+      footnote: this.guideFootnote.textContent,
+    };
     this.batteryState = "";
     this.robotChargeTimer = 0;
     this.easyFeedbackTimer = 0;
@@ -190,8 +218,12 @@ export class GameUI {
 
   setGameMode(mode) {
     const isHard = mode === "hard";
+    const isBegin = mode === "begin";
+    this.#setBeginGuide(isBegin);
+    this.hideBeginChallenge();
+    if (isBegin) this.hideEasyChallenge();
     this.stage.dataset.mode = mode;
-    this.gameModeLabel.textContent = isHard ? "SIÊU KHÓ" : "DỄ";
+    this.gameModeLabel.textContent = isHard ? "SIÊU KHÓ" : isBegin ? "BEGIN" : "DỄ";
     this.robotEnergyLabel.textContent = isHard ? "NẠP KIẾM" : "TIẾN TRÌNH";
     this.batteryCountLabel.textContent = isHard ? "PIN CHẠM KIẾM" : "CÂU ĐÃ XONG";
     this.batteryToken.hidden = true;
@@ -209,7 +241,332 @@ export class GameUI {
       "aria-label",
       isHard ? "Tiến trình nạp kiếm" : "Năng lượng robot",
     );
-    if (!isHard) this.robotHint.textContent = "Chọn đúng khối lệnh để khắc phục tình huống.";
+    if (isBegin) {
+      this.batteryCountValue.innerHTML = '0 <small>/ 5 NHIỆM VỤ</small>';
+      this.robotEnergyLabel.textContent = "NHIỆM VỤ";
+      this.robotEnergyValue.textContent = "0/5";
+      this.robotEnergyTrack.setAttribute("aria-label", "Tiến trình nhiệm vụ BEGIN");
+      this.robotHint.textContent = "Giúp robot xử lý các tình huống quen thuộc.";
+    } else if (!isHard) {
+      this.robotHint.textContent = "Chọn đúng khối lệnh để khắc phục tình huống.";
+    }
+  }
+
+  #setBeginGuide(isBegin) {
+    if (!isBegin) {
+      this.guideEyebrow.textContent = this.defaultGuide.eyebrow;
+      this.guideHeading.textContent = this.defaultGuide.heading;
+      this.guideFootnote.textContent = this.defaultGuide.footnote;
+      this.guideItems.forEach((item, index) => {
+        item.querySelector(".guide-emoji").textContent = this.defaultGuide.items[index].icon;
+        item.querySelector("strong").textContent = this.defaultGuide.items[index].title;
+        item.querySelector("small").textContent = this.defaultGuide.items[index].description;
+      });
+      return;
+    }
+
+    this.guideEyebrow.textContent = "04 / BEGIN GUIDE";
+    this.guideHeading.textContent = "Cách chơi BEGIN";
+    const instructions = [
+      ["☝️", "Chỉ để xem gợi ý", "Duỗi một ngón trỏ và rê lên đồ vật"],
+      ["✊", "Nắm tay để nhặt", "Giữ nắm tay khi mang đồ vật"],
+      ["✋", "Xòe tay ở robot", "Robot nhận món đồ và phản ứng"],
+      ["✨", "Xem lời giải thích", "Thử lại thoải mái, không bị trừ điểm"],
+    ];
+    this.guideItems.forEach((item, index) => {
+      item.querySelector(".guide-emoji").textContent = instructions[index][0];
+      item.querySelector("strong").textContent = instructions[index][1];
+      item.querySelector("small").textContent = instructions[index][2];
+    });
+    this.beginHowToPlay.textContent =
+      "Chỉ một ngón để xem gợi ý · nắm tay để nhặt · xòe tay ở robot.";
+    this.guideFootnote.textContent =
+      "Chỉ bằng đầu ngón trỏ để xem gợi ý; nắm để nhặt, xòe tay ở robot để thả.";
+  }
+
+  setBeginProgress(score, completed, total) {
+    const progress = Math.round((completed / total) * 100);
+    this.scoreValue.textContent = String(score);
+    this.batteryCountLabel.textContent = "NHIỆM VỤ XONG";
+    this.batteryCountValue.innerHTML = `${completed} <small>/ ${total}</small>`;
+    this.robotEnergyLabel.textContent = "NHIỆM VỤ";
+    this.robotEnergyValue.textContent = `${completed}/${total}`;
+    this.robotEnergyBar.style.width = `${progress}%`;
+    this.robotEnergyTrack.setAttribute("aria-valuenow", String(progress));
+    this.robotEnergyTrack.setAttribute("aria-label", "Tiến trình nhiệm vụ BEGIN");
+    this.robotHint.textContent = completed === total
+      ? "Bạn đã giúp robot vượt qua mọi tình huống!"
+      : `Đã hoàn thành ${completed} trên ${total} nhiệm vụ.`;
+  }
+
+  showBeginTask(task, index, total) {
+    this.beginQuestionProgress.textContent = `NHIỆM VỤ ${index + 1}/${total}`;
+    this.beginSituationIllustration.textContent = task.icon;
+    this.beginSituationTitle.textContent = task.title;
+    this.beginSituationDescription.textContent = task.situation;
+    this.beginQuestionPrompt.textContent = task.prompt;
+    this.beginHowToPlay.textContent = index === 0
+      ? "Chỉ một ngón để xem gợi ý · nắm tay để nhặt · xòe tay ở robot."
+      : "Chỉ để xem gợi ý · nắm để nhặt · xòe tay ở robot.";
+    this.beginMission.dataset.intro = "true";
+    this.beginMission.hidden = false;
+  }
+
+  finishBeginIntro() {
+    delete this.beginMission.dataset.intro;
+  }
+
+  setBeginObjects(objects, visible = true) {
+    this.beginObjectsLayer.replaceChildren();
+    objects.forEach((object) => {
+      const token = document.createElement("div");
+      const icon = document.createElement("span");
+      const label = document.createElement("strong");
+      token.className = "begin-object";
+      token.dataset.objectId = object.id;
+      token.setAttribute("role", "img");
+      token.setAttribute("aria-label", object.label);
+      icon.className = "begin-object-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = object.icon;
+      label.textContent = object.label;
+      token.append(icon, label);
+      this.beginObjectsLayer.append(token);
+    });
+    this.beginObjectsLayer.hidden = objects.length === 0;
+    this.beginObjectsLayer.style.visibility = visible ? "visible" : "hidden";
+    this.updateBeginObjects(objects);
+  }
+
+  setBeginObjectsVisible(visible) {
+    this.beginObjectsLayer.style.visibility = visible ? "visible" : "hidden";
+  }
+
+  updateBeginObjects(objects) {
+    for (const object of objects) {
+      const token = [...this.beginObjectsLayer.children]
+        .find((element) => element.dataset.objectId === object.id);
+      if (!token) continue;
+      token.style.left = `${object.position.x * 100}%`;
+      token.style.top = `${object.position.y * 100}%`;
+      token.dataset.held = String(object.isHeld);
+    }
+  }
+
+  getCenteredAnswerPositions(layer, count) {
+    const stage = this.stage.getBoundingClientRect();
+    const objectRects = [...layer.children]
+      .map((element) => element.getBoundingClientRect());
+    const objectWidth = Math.max(...objectRects.map((rect) => rect.width));
+    const objectHeight = Math.max(
+      ...objectRects.map((rect) => rect.height),
+      layer === this.easyBlocksLayer ? 100 : 0,
+    );
+    const mission = (layer === this.beginObjectsLayer ? this.beginMission : this.easyMission)
+      .getBoundingClientRect();
+    const robot = this.robotCharacter.getBoundingClientRect();
+    const patterns = count === 4
+      ? [[-1, -1], [1, -1], [-1, 1], [1, 1]]
+      : count === 3
+        ? [[-1, -1], [1, -1], [0, 1]]
+        : count === 2
+          ? [[-1, 0], [1, 0]]
+          : [[0, 0]];
+    const cursorClearance = 21 + 8;
+    const offsetX = objectWidth / 2 + cursorClearance;
+    const offsetY = objectHeight / 2 + cursorClearance;
+    const obstacles = [mission, robot];
+    const safeMargin = 8;
+    const targetCenter = count === 3
+      ? { x: 0.5, y: 0.5 }
+      : { x: 0.38, y: 0.68 };
+    let bestLayout = null;
+    let bestScore = Infinity;
+
+    for (let centerX = objectWidth + safeMargin; centerX <= stage.width - objectWidth - safeMargin; centerX += 8) {
+      for (let centerY = objectHeight + safeMargin; centerY <= stage.height - objectHeight - safeMargin; centerY += 8) {
+        const layout = patterns.map(([x, y]) => ({
+          x: centerX + x * offsetX,
+          y: centerY + y * offsetY,
+        }));
+        const fitsStage = layout.every((point) =>
+          point.x >= objectWidth / 2 + safeMargin &&
+          point.x <= stage.width - objectWidth / 2 - safeMargin &&
+          point.y >= objectHeight / 2 + safeMargin &&
+          point.y <= stage.height - objectHeight / 2 - safeMargin,
+        );
+        if (!fitsStage) continue;
+
+        const overlapsObstacle = layout.some((point) => {
+          const bounds = {
+            left: stage.left + point.x - objectWidth / 2 - 8,
+            right: stage.left + point.x + objectWidth / 2 + 8,
+            top: stage.top + point.y - objectHeight / 2 - 8,
+            bottom: stage.top + point.y + objectHeight / 2 + 8,
+          };
+          return obstacles.some((obstacle) =>
+            bounds.left < obstacle.right &&
+            bounds.right > obstacle.left &&
+            bounds.top < obstacle.bottom &&
+            bounds.bottom > obstacle.top,
+          );
+        });
+        if (overlapsObstacle) continue;
+
+        const coversHand = layout.some((point) =>
+          Math.abs(point.x - stage.width / 2) < objectWidth / 2 + cursorClearance &&
+          Math.abs(point.y - stage.height / 2) < objectHeight / 2 + cursorClearance,
+        );
+        if (coversHand) continue;
+
+        const score =
+          ((centerX / stage.width - targetCenter.x) / 0.2) ** 2 +
+          (((centerY - (count === 3 ? offsetY / 3 : 0)) / stage.height - targetCenter.y) / 0.25) ** 2;
+        if (score < bestScore) {
+          bestScore = score;
+          bestLayout = layout;
+        }
+      }
+    }
+
+    if (!bestLayout) {
+      const fallbackOffsetX = Math.min(
+        offsetX,
+        Math.max(0, (stage.width - objectWidth - 2 * safeMargin) / 2),
+      );
+      const fallbackOffsetY = Math.min(
+        offsetY,
+        count === 3
+          ? Math.max(0, (stage.height / 2 - objectHeight / 2 - safeMargin) * 3 / 4)
+          : Math.max(0, (stage.height - objectHeight - 2 * safeMargin) / 2),
+      );
+      const centerX = stage.width * targetCenter.x;
+      const centerY = stage.height * targetCenter.y +
+        (count === 3 ? fallbackOffsetY / 3 : 0);
+      bestLayout = patterns.map(([x, y]) => ({
+        x: centerX + x * fallbackOffsetX,
+        y: centerY + y * fallbackOffsetY,
+      }));
+
+      const minX = Math.min(...bestLayout.map((point) => point.x));
+      const maxX = Math.max(...bestLayout.map((point) => point.x));
+      const minY = Math.min(...bestLayout.map((point) => point.y));
+      const maxY = Math.max(...bestLayout.map((point) => point.y));
+      const shiftX = Math.max(
+        objectWidth / 2 + safeMargin - minX,
+        Math.min(0, stage.width - objectWidth / 2 - safeMargin - maxX),
+      );
+      const shiftY = Math.max(
+        objectHeight / 2 + safeMargin - minY,
+        Math.min(0, stage.height - objectHeight / 2 - safeMargin - maxY),
+      );
+      bestLayout = bestLayout.map((point) => ({
+        x: point.x + shiftX,
+        y: point.y + shiftY,
+      }));
+    }
+
+    return bestLayout.map((point) => ({
+      x: point.x / stage.width,
+      y: point.y / stage.height,
+    }));
+  }
+
+  setBeginMessage(message) {
+    this.gameMessageIcon.textContent = "🧩";
+    this.gameMessageText.textContent = message;
+    this.gameMessage.dataset.state = "begin-ready";
+  }
+
+  setBeginHint(message) {
+    this.gameMessageIcon.textContent = "💡";
+    this.gameMessageText.textContent = message;
+    this.gameMessage.dataset.state = "begin-hint";
+  }
+
+  setBeginPointedObject(objectId) {
+    for (const token of this.beginObjectsLayer.children) {
+      token.dataset.pointed = String(token.dataset.objectId === objectId);
+    }
+  }
+
+  setBeginResponse(correct, message, explanation) {
+    if (this.easyFeedbackTimer) window.clearTimeout(this.easyFeedbackTimer);
+    this.robotCharacter.dataset.response = correct ? "correct" : "incorrect";
+    this.robotStageStatus.textContent = correct ? "TỐT LẮM!" : "THỬ LẠI";
+    this.gameMessageIcon.textContent = correct ? "✅" : "💡";
+    this.gameMessageText.textContent = `${message} ${explanation}`;
+    this.gameMessage.dataset.state = correct ? "easy-correct" : "easy-incorrect";
+    this.easyFeedbackTimer = window.setTimeout(() => {
+      delete this.robotCharacter.dataset.response;
+      const energy = Number(this.robotCharacter.dataset.energy ?? 0);
+      this.robotStageStatus.textContent = this.robotCharacter.dataset.state === "on"
+        ? "ACTIVE"
+        : energy > 0 ? `CHARGING ${energy}%` : "OFFLINE";
+      this.easyFeedbackTimer = 0;
+    }, 2000);
+  }
+
+  showBeginCompletion(score) {
+    this.beginMission.hidden = true;
+    this.beginObjectsLayer.hidden = true;
+    this.beginObjectsLayer.replaceChildren();
+    this.beginFinalScore.textContent = String(score);
+    this.beginCompleteOverlay.removeAttribute("data-restarting");
+    this.beginPlayAgainButton.disabled = false;
+    this.setBeginReplaySelection(false, false);
+    this.beginCompleteOverlay.hidden = false;
+  }
+
+  isBeginReplayButtonAt(point) {
+    if (!point || this.beginCompleteOverlay.hidden) return false;
+    const stage = this.stage.getBoundingClientRect();
+    const x = stage.left + point.x * stage.width;
+    const y = stage.top + point.y * stage.height;
+    const button = this.beginPlayAgainButton.getBoundingClientRect();
+    const hitMargin = 24;
+    return x >= button.left - hitMargin && x <= button.right + hitMargin &&
+      y >= button.top - hitMargin && y <= button.bottom + hitMargin;
+  }
+
+  setBeginReplaySelection(isSelected, canActivate) {
+    this.beginPlayAgainButton.dataset.pointed = String(isSelected);
+    this.beginPlayAgainButton.dataset.ready = String(isSelected && canActivate);
+    if (this.beginCompleteOverlay.dataset.restarting === "true") return;
+    this.beginReplayInstruction.textContent = !isSelected
+      ? "Đưa tay vào nút rồi nắm tay để mở cổng năng lượng và chơi lại."
+      : canActivate
+        ? "Đang nhắm nút — nắm tay để mở cổng năng lượng!"
+        : "Thả nắm tay trước, rồi nắm lại để chơi tiếp.";
+  }
+
+  getBeginReplayCenter() {
+    const stage = this.stage.getBoundingClientRect();
+    const button = this.beginPlayAgainButton.getBoundingClientRect();
+    return {
+      x: (button.left + button.width / 2 - stage.left) / stage.width,
+      y: (button.top + button.height / 2 - stage.top) / stage.height,
+    };
+  }
+
+  startBeginReplayEffect() {
+    this.stage.dataset.beginReplay = "true";
+    this.beginCompleteOverlay.dataset.restarting = "true";
+    this.beginPlayAgainButton.disabled = true;
+    this.beginReplayInstruction.textContent = "Cổng năng lượng đang mở — chuẩn bị nhiệm vụ mới!";
+  }
+
+  hideBeginChallenge() {
+    delete this.beginMission.dataset.intro;
+    this.beginMission.hidden = true;
+    this.beginObjectsLayer.hidden = true;
+    this.beginObjectsLayer.style.visibility = "visible";
+    this.beginObjectsLayer.replaceChildren();
+    this.beginCompleteOverlay.hidden = true;
+    this.beginCompleteOverlay.removeAttribute("data-restarting");
+    delete this.stage.dataset.beginReplay;
+    this.beginPlayAgainButton.disabled = false;
+    this.setBeginReplaySelection(false, false);
   }
 
   setEasyProgress(score, completed, total) {
@@ -426,17 +783,26 @@ export class GameUI {
     this.performanceMode.textContent = ecoMode ? "CHẾ ĐỘ TIẾT KIỆM · 20 FPS" : "MỤC TIÊU 30 FPS";
   }
 
-  setPosition(x, y) {
+  setPosition(x, y, isFingerPointing = false) {
+    this.positionLabel.textContent = isFingerPointing
+      ? "Đầu ngón trỏ · X / Y"
+      : "Tâm lòng bàn tay · X / Y";
     this.positionValue.textContent = `${x}% / ${y}%`;
   }
 
-  setCursor(point) {
+  setCursor(point, isFingerPointing = false) {
     if (!point) {
       this.virtualCursor.hidden = true;
+      delete this.virtualCursor.dataset.cursor;
       return null;
     }
 
     this.virtualCursor.hidden = false;
+    this.virtualCursor.dataset.cursor = isFingerPointing ? "finger" : "palm";
+    this.virtualCursor.setAttribute(
+      "aria-label",
+      isFingerPointing ? "Con trỏ ở đầu ngón trỏ" : "Con trỏ ở tâm lòng bàn tay",
+    );
     const horizontalMargin = this.virtualCursor.offsetWidth / 2 / this.stage.clientWidth;
     const verticalMargin = this.virtualCursor.offsetHeight / 2 / this.stage.clientHeight;
     const boundedPoint = {

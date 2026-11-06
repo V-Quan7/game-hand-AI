@@ -1,6 +1,6 @@
 # ENERGY ROBOT — Version 5
 
-ENERGY ROBOT có hai chế độ chơi. Sau khi kích hoạt, trỏ bàn tay vào chế độ muốn chơi rồi nắm tay để xác nhận. Chế độ Dễ gồm năm tình huống học lập trình: nhặt khối lệnh phù hợp (IF THEN hoặc IF THEN ELSE) trong số bốn khối đang rơi và đưa vào robot. Các khối WAIT và REPEAT xuất hiện làm phương án gây nhiễu. Chế độ Siêu khó yêu cầu nhặt kiếm, chạm kiếm vào năm pin rơi (bốn pin cùng xuất hiện với tốc độ khác nhau), đưa kiếm đã nạp đến robot rồi trả lời đúng năm câu hỏi liên tiếp.
+ENERGY ROBOT có ba chế độ chơi. Sau khi kích hoạt, trỏ bàn tay vào chế độ muốn chơi rồi nắm tay để xác nhận. Chế độ BEGIN dành cho người mới, gồm năm tình huống quen thuộc: chọn đồ vật phù hợp, mang đến robot và xem giải thích về cách ghép điều kiện với hành động. Chế độ Dễ gồm năm tình huống học lập trình: nhặt khối lệnh phù hợp (IF THEN hoặc IF THEN ELSE) trong số bốn khối đang rơi và đưa vào robot. Các khối WAIT và REPEAT xuất hiện làm phương án gây nhiễu. Chế độ Siêu khó yêu cầu nhặt kiếm, chạm kiếm vào năm pin rơi (bốn pin cùng xuất hiện với tốc độ khác nhau), đưa kiếm đã nạp đến robot rồi trả lời đúng năm câu hỏi liên tiếp.
 
 ## Cấu trúc thư mục
 
@@ -20,7 +20,6 @@ ENERGY-ROBOT/
 │   ├── gameEngine.js
 │   ├── handController.js
 │   ├── handTracking.js
-│   ├── effects.js
 │   ├── robot.js
 │   └── ui.js
 └── README.md
@@ -40,9 +39,10 @@ ENERGY-ROBOT/
 3. Mở `index.html`, chọn **Open with Live Server**.
 4. Trong Chrome, nhấn **START GAME** hoặc **BẬT WEBCAM** và cho phép truy cập camera.
 5. Đưa một bàn tay vào lõi năng lượng giữa sân chơi và giữ nắm tay ba giây để mở màn chọn chế độ.
-6. Trỏ tâm lòng bàn tay vào **DỄ** hoặc **SIÊU KHÓ**, rồi nắm tay để xác nhận.
-7. Ở chế độ Dễ, đọc tình huống và câu hỏi trên đầu sân chơi, nắm tay để nhặt khối lệnh đang rơi rồi xòe tay trong vùng robot để kiểm tra. Chọn sai không mất điểm và có thể thử lại; trả lời đúng cả năm tình huống để hoàn thành.
-8. Ở chế độ Siêu khó, nắm tay trên kiếm để nhặt; kiếm giữ thẳng đứng với lưỡi hướng lên. Đưa mũi kiếm chạm bốn pin đang rơi. Chạm đủ năm pin, đưa kiếm đến vùng nhận của robot rồi xòe tay; trả lời đúng cả năm câu hỏi để hoàn thành thử thách.
+6. Trỏ tâm lòng bàn tay vào **BEGIN**, **DỄ** hoặc **SIÊU KHÓ**, rồi nắm tay để xác nhận.
+7. Ở BEGIN, đọc tình huống, nắm tay trên đồ vật phù hợp để nhặt, đưa đến robot rồi xòe tay. Chọn sai không bị trừ điểm; trò chơi gợi ý để bạn thử lại. Hoàn thành năm tình huống để học cách ghép điều kiện với hành động.
+8. Ở chế độ Dễ, đọc tình huống và câu hỏi trên đầu sân chơi, nắm tay để nhặt một trong các khối lệnh đang rơi rồi xòe tay trong vùng robot để kiểm tra. Chọn sai không mất điểm và có thể thử lại; trả lời đúng cả năm tình huống để hoàn thành.
+9. Ở chế độ Siêu khó, nắm tay trên kiếm để nhặt; kiếm giữ thẳng đứng với lưỡi hướng lên. Đưa mũi kiếm chạm bốn pin đang rơi. Chạm đủ năm pin, đưa kiếm đến vùng nhận của robot rồi xòe tay; trả lời đúng cả năm câu hỏi để hoàn thành thử thách.
 
 Mô hình thử khởi tạo bằng GPU trước, sau đó tự chuyển sang CPU nếu GPU không khả dụng. Nếu webcam hoặc tải mô hình thất bại, thông báo lỗi được hiển thị trên trang; kiểm tra quyền camera, kết nối mạng và tải lại trang sau khi khắc phục.
 
@@ -53,7 +53,8 @@ Mô hình thử khởi tạo bằng GPU trước, sau đó tự chuyển sang CP
 - **TIẾP TỤC AI:** tiếp tục nhận diện.
 - **CHƠI LẠI:** đặt lại trạng thái nhận diện mà không khởi tạo lại mô hình.
 - Bố cục màn chơi trên máy tính: HUD bên trái, camera/sân chơi ở giữa và năm nút điều khiển cùng thông báo ở cột bên phải. Toàn màn hình giữ bố cục này; trên màn hình nhỏ các khu vực tự xếp lại để vừa khung.
-- **Chế độ Dễ:** năm tình huống robot lần lượt xuất hiện. Mỗi lượt có bốn khối lệnh dùng ảnh trong `assets/images`: IF THEN, IF THEN ELSE, WAIT và REPEAT. Khối đúng được đưa vào robot để khắc phục tình huống, cộng 100 điểm; khối sai phát hiệu ứng đỏ trong 2 giây và không mất điểm. Hoàn thành năm câu được tối đa 500 điểm.
+- **Chế độ Dễ:** năm tình huống robot lần lượt xuất hiện. Mỗi lượt có bốn khối lệnh dùng ảnh trong `assets/images`: IF THEN, IF THEN ELSE, WAIT và REPEAT. Các khối rơi từ phía trên ở các làn và tốc độ khác nhau; nắm tay để nhặt, xòe tay trong vùng robot để kiểm tra. Khối đúng cộng 100 điểm; khối sai phát hiệu ứng đỏ trong 2 giây và không mất điểm. Hoàn thành năm câu được tối đa 500 điểm.
+- **Chế độ BEGIN:** năm nhiệm vụ nối tiếp với ba đồ vật được xếp cố định, cân đối quanh tâm vùng chơi và chừa khoảng trống ở giữa. Người chơi dùng nắm/xòe tay để chọn và mang đồ vật đến robot; lựa chọn sai được gợi ý và có thể thử lại, lựa chọn đúng giải thích ý tưởng điều kiện-hành động. Mỗi nhiệm vụ đúng cộng 100 điểm, robot được nạp thêm 20%, hoàn thành tối đa 500 điểm.
 - **Chế độ Siêu khó:** nắm tay trên kiếm để nhặt; kiếm giữ thẳng đứng, lưỡi hướng lên và không xoay theo góc bàn tay. Bốn pin rơi đồng thời ở các làn và tốc độ khác nhau; đưa mũi kiếm chạm pin để nạp kiếm, đủ năm lần thì xòe tay trong vùng nhận để giao kiếm. Trả lời đúng năm câu hỏi liên tiếp để hoàn thành; trả lời sai sẽ khởi động lại thử thách.
 - Trong màn chọn chế độ, trỏ vào lựa chọn để làm nổi bật rồi nắm tay để xác nhận. Có thể nhấn nút chế độ bằng chuột hoặc bàn phím.
 - Độ sáng thân, mắt, lõi và đường viền robot tăng theo các mốc năng lượng; robot chỉ hiện ACTIVE khi đầy 100%.
@@ -62,7 +63,8 @@ Mô hình thử khởi tạo bằng GPU trước, sau đó tự chuyển sang CP
 - Âm thanh dùng Web Audio API, được mở khóa sau thao tác bấm của người dùng; nếu trình duyệt không hỗ trợ, trò chơi vẫn chạy và nút âm thanh hiển thị trạng thái tắt.
 - Hiệu ứng hạt được giới hạn số lượng, tự dừng vòng lặp khi hết hiệu ứng và tôn trọng cài đặt giảm chuyển động của hệ điều hành.
 - AI giới hạn tối đa 30 FPS; nếu thời gian nhận diện chậm liên tục, tự giảm mục tiêu xuống 20 FPS và trở lại 30 FPS khi hiệu năng ổn định.
-- **Chế độ Dễ:** mỗi câu có bốn khối lệnh rơi chậm với tốc độ hơi khác nhau; cả bốn ảnh trong `assets/images` đều được dùng. Chỉ IF THEN hoặc IF THEN ELSE phù hợp với tình huống mới được tính đúng.
+- **Chế độ Dễ:** mỗi câu có bốn khối lệnh rơi từ phía trên ở các làn và tốc độ khác nhau; cả bốn ảnh trong `assets/images` đều được dùng. Chỉ IF THEN hoặc IF THEN ELSE phù hợp với tình huống mới được tính đúng.
+- **Chế độ BEGIN:** duỗi một ngón trỏ để tạm chuyển con trỏ từ tâm lòng bàn tay lên đầu ngón tay; giữ đầu ngón tay trên đồ vật khoảng nửa giây để xem gợi ý. Nắm tay để nhặt, xòe tay ở robot để thả. Các chế độ Dễ và Siêu khó vẫn dùng con trỏ lòng bàn tay như cũ.
 - Giữ nắm tay để mang khối lệnh theo con trỏ; xòe tay trong vùng robot để nộp. Thả ngoài vùng nhận không nộp đáp án; khối lệnh vẫn có thể được nhặt lại.
 - Chọn đúng cộng 100 điểm và hiển thị hiệu ứng xanh cùng hành động của robot trong 2 giây. Chọn sai hiển thị hiệu ứng đỏ trong 2 giây, không trừ điểm và giữ nguyên câu hỏi.
 - Nút chơi lại đặt lại điểm, bộ đếm và pin về trạng thái ban đầu.
@@ -75,13 +77,15 @@ Mô hình thử khởi tạo bằng GPU trước, sau đó tự chuyển sang CP
 
 ## Kiểm tra nhanh
 
-- Mở trang bằng Live Server và xác nhận chế độ Dễ hiện tình huống, câu hỏi, tiến trình 1/5 và bốn khối lệnh rơi.
+- Mở trang bằng Live Server và xác nhận chế độ Dễ hiện tình huống, câu hỏi, tiến trình 1/5 và bốn khối lệnh di chuyển tự do trong sân chơi.
 - Bật webcam: video, khung xương 21 điểm, dấu phát sáng ở tâm lòng bàn tay, trạng thái AI, độ tin cậy và FPS xuất hiện.
 - Đưa con trỏ ra xa pin rồi nắm tay: pin không được nhặt.
 - Đưa con trỏ sát pin rồi nắm tay ổn định: pin gắn theo con trỏ.
 - Xòe tay ổn định: pin được thả tại chỗ; nắm tay trở lại gần pin để nhặt lại.
 - Đưa tay ra khỏi khung hình khi đang giữ pin: pin phải giữ nguyên, không tự thả.
 - **Chế độ Dễ:** thử nộp sai và đúng; câu trả lời sai không trừ điểm/không chuyển câu, còn đáp án đúng cộng 100 điểm, hiển thị hiệu ứng xanh và sang câu tiếp theo sau 2 giây.
+- **Chế độ BEGIN:** kiểm tra đủ ba đồ vật có thể nhặt, mang đồ vật đúng đến robot để xem lời giải thích và chuyển nhiệm vụ; mang đồ vật sai đến robot để nhận gợi ý rồi thử lại; chơi đủ năm nhiệm vụ và nút chơi lại.
+- **BEGIN — gợi ý bằng ngón trỏ:** duỗi riêng ngón trỏ, rê đầu ngón lên một đồ vật và giữ khoảng nửa giây; đồ vật được làm nổi bật và gợi ý xuất hiện. Nắm/xòe tay vẫn dùng để nhặt và thả.
 - Màn chọn chế độ: trỏ vào từng lựa chọn để kiểm tra vùng làm nổi bật, sau đó nắm tay để bắt đầu chế độ đó.
 - **Chế độ Siêu khó:** xác nhận có bốn pin rơi cùng lúc với tốc độ khác nhau; nhặt kiếm và đưa mũi kiếm chạm pin để tăng tiến trình đến 5/5.
 - Giao kiếm đã nạp vào robot bằng cách xòe tay trong vùng nhận; hoàn thành năm câu hỏi để giải cứu robot, trả lời sai sẽ đặt lại thử thách Siêu khó.

@@ -209,10 +209,16 @@ function updateHandResult(result, landmarks) {
   const categoryName = category?.categoryName ?? "Unknown";
   const palm = palmCenter(landmarks);
   const stabilized = stabilizer.update(categoryName, score, landmarks);
-  const point = handController.update(palm);
+  const isFingerPointing =
+    isGameplayActive &&
+    gameEngine.mode === "begin" &&
+    stabilized.isStable &&
+    stabilized.gesture === "Pointing_Up";
+  const cursorAnchor = isFingerPointing ? landmarks[8] : palm;
+  const point = handController.update(cursorAnchor);
   if (!point) return;
   drawHandLandmarks(ui.context, ui.canvas, landmarks, point);
-  const cursorPoint = ui.setCursor(point);
+  const cursorPoint = ui.setCursor(point, isFingerPointing);
 
   const gesture = stabilized.isStable ? stabilized.gesture : "Uncertain";
   const isStableGesture = stabilized.isStable;
@@ -233,9 +239,9 @@ function updateHandResult(result, landmarks) {
 
   const normalizedX = Math.round(cursorPoint.x * 100);
   const normalizedY = Math.round(cursorPoint.y * 100);
-  ui.setPosition(normalizedX, normalizedY);
+  ui.setPosition(normalizedX, normalizedY, isFingerPointing);
   ui.overlayDescription.textContent =
-    `Tâm lòng bàn tay · X ${normalizedX}% / Y ${normalizedY}%`;
+    `${isFingerPointing ? "Đầu ngón trỏ" : "Tâm lòng bàn tay"} · X ${normalizedX}% / Y ${normalizedY}%`;
 }
 
 function handleGameInput(input) {
@@ -322,7 +328,9 @@ function selectGameMode(mode) {
   ui.setMessage(
     mode === "hard"
       ? "SIÊU KHÓ: Nắm tay trên kiếm cạnh robot để nhặt."
-      : "Đưa tay đến gần pin, nắm để nhặt và xòe tay trong vùng robot để nạp.",
+      : mode === "begin"
+        ? "BEGIN: Chỉ một ngón để xem gợi ý; nắm tay để nhặt và xòe tay ở robot để thả."
+        : "Đưa tay đến gần pin, nắm để nhặt và xòe tay trong vùng robot để nạp.",
   );
 }
 
@@ -411,6 +419,7 @@ ui.cameraButton.addEventListener("click", () => {
 ui.pauseButton.addEventListener("click", togglePause);
 ui.restartButton.addEventListener("click", restartSession);
 ui.easyPlayAgainButton.addEventListener("click", restartSession);
+ui.beginPlayAgainButton.addEventListener("click", restartSession);
 ui.modeButtons.forEach((button) => {
   button.addEventListener("click", () => selectGameMode(button.dataset.mode));
 });
