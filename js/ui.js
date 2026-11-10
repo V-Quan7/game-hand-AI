@@ -83,6 +83,9 @@ export class GameUI {
     this.modeSelectOverlay = document.querySelector("#mode-select-overlay");
     this.modeButtons = [...document.querySelectorAll(".mode-option")];
     this.modeSelectHint = this.modeSelectOverlay.querySelector(".mode-select-card > p");
+    this.modeSettingsToggle = document.querySelector("#mode-settings-toggle");
+    this.modeSettingsPanel = document.querySelector("#mode-settings-panel");
+    this.modeSettingInputs = [...document.querySelectorAll(".mode-setting-toggle")];
     this.gameModeLabel = document.querySelector("#game-mode-label");
     this.hardBatteryTokens = [...document.querySelectorAll(".hard-battery-token")];
     this.energySword = document.querySelector("#energy-sword");
@@ -108,6 +111,19 @@ export class GameUI {
     this.beginFinalScore = document.querySelector("#begin-final-score");
     this.beginPlayAgainButton = document.querySelector("#begin-play-again");
     this.beginReplayInstruction = document.querySelector("#begin-replay-instruction");
+    this.greenPanel = document.querySelector("#green-game-panel");
+    this.greenRoundLabel = document.querySelector("#green-round-label");
+    this.greenTimer = document.querySelector("#green-timer");
+    this.greenLegend = document.querySelector("#green-legend");
+    this.greenInstruction = document.querySelector("#green-instruction");
+    this.greenTargetsLayer = document.querySelector("#green-targets-layer");
+    this.greenScorePopup = document.querySelector("#green-score-popup");
+    this.greenBins = [...document.querySelectorAll(".green-bin")];
+    this.greenBinPicker = document.querySelector("#green-bin-picker");
+    this.greenCompleteOverlay = document.querySelector("#green-complete-overlay");
+    this.greenPlayAgainButton = document.querySelector("#green-play-again");
+    this.greenFinalScore = document.querySelector("#green-final-score");
+    this.greenFinalCorrect = document.querySelector("#green-final-correct");
     this.guideEyebrow = document.querySelector(".guide-panel .eyebrow");
     this.guideHeading = document.querySelector(".guide-panel h2");
     this.guideItems = [...document.querySelectorAll(".guide-panel .guide-item")];
@@ -125,6 +141,8 @@ export class GameUI {
     this.batteryState = "";
     this.robotChargeTimer = 0;
     this.easyFeedbackTimer = 0;
+    this.greenCursorFeedbackTimer = 0;
+    this.greenScorePopupTimer = 0;
     this.quizOverlay = document.querySelector("#quiz-overlay");
     this.quizQuestion = document.querySelector("#quiz-question");
     this.quizAnswers = document.querySelector("#quiz-answers");
@@ -198,9 +216,26 @@ export class GameUI {
     const x = stage.left + point.x * stage.width;
     const y = stage.top + point.y * stage.height;
     return this.modeButtons.findIndex((button) => {
+      if (button.hidden) return false;
       const bounds = button.getBoundingClientRect();
       return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
     });
+  }
+
+  setEnabledModes(enabledModes) {
+    this.modeButtons.forEach((button) => {
+      button.hidden = !enabledModes.has(button.dataset.mode);
+      if (button.hidden) button.classList.remove("is-pointed");
+    });
+    this.modeSettingInputs.forEach((input) => {
+      input.checked = enabledModes.has(input.dataset.mode);
+      input.disabled = enabledModes.size === 1 && input.checked;
+    });
+  }
+
+  setModeSettingsOpen(open) {
+    this.modeSettingsPanel.hidden = !open;
+    this.modeSettingsToggle.setAttribute("aria-expanded", String(open));
   }
 
   setModeSelection(index, canConfirm) {
@@ -219,11 +254,14 @@ export class GameUI {
   setGameMode(mode) {
     const isHard = mode === "hard";
     const isBegin = mode === "begin";
-    this.#setBeginGuide(isBegin);
+    const isGreen = mode === "green";
+    if (isBegin) this.#setBeginGuide(true);
+    else if (isGreen) this.#setGreenGuide();
+    else this.#setBeginGuide(false);
     this.hideBeginChallenge();
     if (isBegin) this.hideEasyChallenge();
     this.stage.dataset.mode = mode;
-    this.gameModeLabel.textContent = isHard ? "SIÊU KHÓ" : isBegin ? "BEGIN" : "DỄ";
+    this.gameModeLabel.textContent = isHard ? "SIÊU KHÓ" : isBegin ? "KHÁM PHÁ" : isGreen ? "GREEN GUARDIAN" : "THỬ THÁCH";
     this.robotEnergyLabel.textContent = isHard ? "NẠP KIẾM" : "TIẾN TRÌNH";
     this.batteryCountLabel.textContent = isHard ? "PIN CHẠM KIẾM" : "CÂU ĐÃ XONG";
     this.batteryToken.hidden = true;
@@ -241,6 +279,7 @@ export class GameUI {
       "aria-label",
       isHard ? "Tiến trình nạp kiếm" : "Năng lượng robot",
     );
+    this.robotEnergyTrack.hidden = isGreen;
     if (isBegin) {
       this.batteryCountValue.innerHTML = '0 <small>/ 5 NHIỆM VỤ</small>';
       this.robotEnergyLabel.textContent = "NHIỆM VỤ";
@@ -248,8 +287,462 @@ export class GameUI {
       this.robotEnergyTrack.setAttribute("aria-label", "Tiến trình nhiệm vụ BEGIN");
       this.robotHint.textContent = "Giúp robot xử lý các tình huống quen thuộc.";
     } else if (!isHard) {
-      this.robotHint.textContent = "Chọn đúng khối lệnh để khắc phục tình huống.";
+      this.robotHint.textContent = isGreen
+        ? "Đưa tâm bàn tay đến mục tiêu, nắm tay để chọn và phân loại."
+        : "Chọn đúng khối lệnh để khắc phục tình huống.";
     }
+    if (isGreen) {
+      this.batteryCountLabel.textContent = "MỤC TIÊU ĐÚNG";
+      this.batteryCountValue.innerHTML = '0 <small>ĐÚNG</small>';
+      this.robotEnergyLabel.textContent = "THỜI GIAN";
+      this.robotEnergyValue.textContent = "60s";
+      this.robotHint.textContent = "Đưa tâm bàn tay lên chấm rác, nắm tay để chọn.";
+    }
+    this.hideGreenChallenge();
+  }
+
+  #setGreenGuide() {
+    this.guideEyebrow.textContent = "GREEN GUARDIAN";
+    this.guideHeading.textContent = "Cách chơi phân loại rác";
+    const instructions = [
+      ["✋", "Di chuyển bàn tay", "Đưa tâm lòng bàn tay đến chấm rác"],
+      ["✊", "Nắm tay để chọn", "Màn 2 giữ nắm tay để kéo rác đến thùng"],
+      ["✋", "Kéo và thả rác", "Ở màn 2, giữ nắm tay kéo rác vào thùng rồi xòe tay"],
+      ["🧠", "Học qua câu hỏi", "Câu hỏi chỉ xuất hiện sau mỗi lượt 60 giây"],
+    ];
+    this.guideItems.forEach((item, index) => {
+      item.querySelector(".guide-emoji").textContent = instructions[index][0];
+      item.querySelector("strong").textContent = instructions[index][1];
+      item.querySelector("small").textContent = instructions[index][2];
+    });
+    this.guideFootnote.textContent = "Mỗi câu trả lời đúng cộng 1 điểm; chọn sai không bị trừ điểm.";
+  }
+
+  showGreenRound(stageIndex, seconds) {
+    const isSorting = stageIndex === 1;
+    this.greenTargetsLayer.dataset.stage = String(stageIndex);
+    this.greenPanel.hidden = false;
+    this.greenCompleteOverlay.hidden = true;
+    this.greenRoundLabel.textContent = isSorting
+      ? "NHIỆM VỤ 2 · PHÂN LOẠI RÁC TÁI CHẾ VÀ KHÔNG TÁI CHẾ"
+      : "NHIỆM VỤ 1 · CHỌN TẤT CẢ RÁC HỮU CƠ";
+    this.greenTimer.textContent = String(Math.ceil(seconds));
+    this.greenTimer.dataset.urgent = String(seconds <= 10);
+    this.greenLegend.replaceChildren();
+    const entries = isSorting
+      ? [["♻", "Tái chế", "recycle"], ["🗑", "Không tái chế", "other"]]
+      : [["●", "Hữu cơ", "organic"], ["●", "Mục tiêu gây nhiễu", "distractor"]];
+    entries.forEach(([icon, label, kind]) => {
+      const entry = document.createElement("span");
+      entry.className = `green-legend-item green-legend-item--${kind}`;
+      entry.innerHTML = `<i aria-hidden="true">${icon}</i>${label}`;
+      this.greenLegend.append(entry);
+    });
+  }
+
+  updateGreenTimer(seconds) {
+    this.greenTimer.textContent = String(Math.ceil(seconds));
+    this.greenTimer.dataset.urgent = String(seconds <= 10);
+    this.robotEnergyValue.textContent = `${Math.ceil(seconds)}s`;
+  }
+
+  getGreenTargetSpawnPosition(size, existingTargets, random = Math.random) {
+    const stage = this.stage.getBoundingClientRect();
+    if (!stage.width || !stage.height) return { x: 0.5, y: 0.5 };
+
+    const marginX = Math.min(size / 2 + 12, stage.width / 2);
+    const marginY = Math.min(size / 2 + 12, stage.height / 2);
+    const obstacles = [
+      this.greenPanel,
+      ...(this.greenBinPicker.hidden ? [] : this.greenBins),
+    ]
+      .filter((element) => element && !element.hidden && getComputedStyle(element).display !== "none")
+      .map((element) => element.getBoundingClientRect());
+    let bestPosition = null;
+    let bestClearance = -Infinity;
+    const evaluatePosition = (x, y) => {
+      const radius = size / 2 + 10;
+      let clearance = Infinity;
+
+      for (const target of existingTargets) {
+        const distance = Math.hypot(
+          x - target.position.x * stage.width,
+          y - target.position.y * stage.height,
+        );
+        clearance = Math.min(clearance, distance - (size + target.size) / 2 - 12);
+      }
+
+      const bounds = {
+        left: stage.left + x - radius,
+        right: stage.left + x + radius,
+        top: stage.top + y - radius,
+        bottom: stage.top + y + radius,
+      };
+      const overlapsObstacle = obstacles.some((obstacle) =>
+        bounds.left < obstacle.right &&
+        bounds.right > obstacle.left &&
+        bounds.top < obstacle.bottom &&
+        bounds.bottom > obstacle.top,
+      );
+      return { clearance: overlapsObstacle ? -Infinity : clearance, overlapsObstacle };
+    };
+
+    for (let attempt = 0; attempt < 48; attempt += 1) {
+      const x = marginX + random() * Math.max(0, stage.width - marginX * 2);
+      const y = marginY + random() * Math.max(0, stage.height - marginY * 2);
+      const { clearance } = evaluatePosition(x, y);
+      if (clearance > bestClearance) {
+        bestClearance = clearance;
+        bestPosition = { x, y };
+      }
+      if (clearance >= 0) return { x: x / stage.width, y: y / stage.height };
+    }
+
+    const step = Math.max(size / 2 + 12, 32);
+    for (let y = marginY; y <= stage.height - marginY; y += step) {
+      for (let x = marginX; x <= stage.width - marginX; x += step) {
+        const { clearance, overlapsObstacle } = evaluatePosition(x, y);
+        if (!overlapsObstacle && clearance > bestClearance) {
+          bestClearance = clearance;
+          bestPosition = { x, y };
+        }
+      }
+    }
+
+    return {
+      x: (bestPosition?.x ?? stage.width / 2) / stage.width,
+      y: (bestPosition?.y ?? stage.height / 2) / stage.height,
+    };
+  }
+
+  setGreenTargets(targets, selectedIndex = -1) {
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const isInitialSpawn = targets.length > 0 && ![...this.greenTargetsLayer.children]
+      .some((target) => target.dataset.exiting !== "true");
+    const targetIds = new Set(targets.map((target) => String(target.id)));
+
+    for (const dot of [...this.greenTargetsLayer.children]) {
+      if (reduceMotion && dot.dataset.exiting === "true") {
+        dot.remove();
+        continue;
+      }
+      if (reduceMotion && dot.dataset.entering === "true") {
+        delete dot.dataset.entering;
+        dot.style.animationDelay = "";
+      }
+      if (targetIds.has(dot.dataset.targetId)) continue;
+      if (reduceMotion) {
+        dot.remove();
+      } else if (dot.dataset.exiting !== "true") {
+        if (dot.dataset.resolving === "true") {
+          dot.getAnimations().forEach((animation) => animation.cancel());
+        }
+        dot.dataset.exiting = "true";
+      }
+    }
+
+    targets.forEach((target, index) => {
+      let dot = [...this.greenTargetsLayer.children]
+        .find((item) => item.dataset.targetId === String(target.id) && item.dataset.exiting !== "true");
+      const isNew = !dot;
+      if (!dot) {
+        dot = document.createElement("div");
+        dot.className = "green-target";
+        dot.dataset.targetId = String(target.id);
+        dot.addEventListener("animationend", (event) => {
+          if (event.target !== dot) return;
+          if (event.animationName === "green-target-enter" && dot.dataset.entering === "true") {
+            delete dot.dataset.entering;
+            dot.style.animationDelay = "";
+          } else if (event.animationName === "green-target-exit" && dot.dataset.exiting === "true") {
+            dot.remove();
+            if (this.greenTargetsLayer.childElementCount === 0) this.greenTargetsLayer.hidden = true;
+          }
+        });
+      }
+      dot.dataset.group = target.group;
+      dot.dataset.selected = String(index === selectedIndex);
+      dot.dataset.resolving = String(target.isResolving === true);
+      dot.dataset.targetIndex = String(index);
+      dot.dataset.hidden = String(target.hiddenFor > 0);
+      dot.setAttribute("role", "img");
+      dot.setAttribute("aria-label", target.name);
+      dot.title = target.name;
+      dot.style.left = `${target.position.x * 100}%`;
+      dot.style.top = `${target.position.y * 100}%`;
+      dot.style.width = `${target.size}px`;
+      dot.style.height = `${target.size}px`;
+      dot.textContent = target.icon;
+      this.greenTargetsLayer.append(dot);
+
+      if (isNew && !reduceMotion) {
+        dot.dataset.entering = "true";
+        dot.style.animationDelay = `${isInitialSpawn ? index * 390 : 0}ms, 0ms`;
+      }
+    });
+    this.greenTargetsLayer.hidden = targets.length === 0 && this.greenTargetsLayer.childElementCount === 0;
+    this.virtualCursor.dataset.targeting = "false";
+  }
+
+  updateGreenTargetPositions(targets) {
+    for (const dot of this.greenTargetsLayer.children) {
+      if (dot.dataset.exiting === "true") continue;
+      const target = targets[Number(dot.dataset.targetIndex)];
+      if (!target) continue;
+      dot.style.left = `${target.position.x * 100}%`;
+      dot.style.top = `${target.position.y * 100}%`;
+      dot.dataset.hidden = String(target.hiddenFor > 0);
+    }
+  }
+
+  setGreenTargetSelection(index) {
+    for (const target of this.greenTargetsLayer.children) {
+      target.dataset.pointed = String(
+        target.dataset.exiting !== "true" &&
+        target.dataset.resolving !== "true" &&
+        Number(target.dataset.targetIndex) === index,
+      );
+    }
+    this.virtualCursor.dataset.targeting = String(index >= 0);
+  }
+
+  getGreenTargetAt(point) {
+    if (!point) return -1;
+    const stage = this.stage.getBoundingClientRect();
+    const x = stage.left + point.x * stage.width;
+    const y = stage.top + point.y * stage.height;
+    for (const target of this.greenTargetsLayer.children) {
+      if (
+        target.dataset.hidden === "true" ||
+        target.dataset.exiting === "true" ||
+        target.dataset.resolving === "true" ||
+        target.dataset.entering === "true"
+      ) continue;
+      const bounds = target.getBoundingClientRect();
+      if (x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom) {
+        return Number(target.dataset.targetIndex);
+      }
+    }
+    return -1;
+  }
+
+  showGreenBins(visible, target = null) {
+    this.greenBinPicker.hidden = !visible;
+    this.stage.dataset.greenDragging = String(visible);
+    this.setGreenBinSelection(null);
+    if (!visible) return null;
+
+    const otherBin = this.greenBins.find((bin) => bin.dataset.bin === "other");
+    const recycleBin = this.greenBins.find((bin) => bin.dataset.bin === "recycle");
+    const stageWidth = this.stage.clientWidth;
+    const stageHeight = this.stage.clientHeight;
+    const binWidth = otherBin?.offsetWidth ?? 0;
+    const binHeight = otherBin?.offsetHeight ?? 0;
+    const gap = Number.parseFloat(getComputedStyle(this.greenBinPicker).getPropertyValue("--green-bin-gap"));
+    const targetElement = target && [...this.greenTargetsLayer.children]
+      .find((element) => element.dataset.targetId === String(target.id));
+    const targetBounds = targetElement?.getBoundingClientRect();
+    const visualRadius = targetBounds ? Math.max(targetBounds.width, targetBounds.height) / 2 : 0;
+    const targetScale = targetElement ? Number.parseFloat(getComputedStyle(targetElement).scale) : 0;
+    if (!target || !targetElement || !otherBin || !recycleBin || !stageWidth || !stageHeight ||
+      !binWidth || !binHeight || !Number.isFinite(gap) ||
+      !Number.isFinite(visualRadius) || !Number.isFinite(targetScale)) {
+      this.greenBinPicker.hidden = true;
+      throw new Error("Không thể bố trí thùng rác trong khu vực chơi.");
+    }
+
+    const horizontalInset = visualRadius + gap + binWidth;
+    const minX = Math.min(horizontalInset, stageWidth / 2);
+    const maxX = Math.max(stageWidth - horizontalInset, stageWidth / 2);
+    const verticalInset = Math.min(Math.max(visualRadius, binHeight / 2), stageHeight / 2);
+    const stageBounds = this.stage.getBoundingClientRect();
+    const centerX = Math.max(
+      minX,
+      Math.min(maxX, targetBounds.left + targetBounds.width / 2 - stageBounds.left - this.stage.clientLeft),
+    );
+    const centerY = Math.max(
+      verticalInset,
+      Math.min(
+        stageHeight - verticalInset,
+        targetBounds.top + targetBounds.height / 2 - stageBounds.top - this.stage.clientTop,
+      ),
+    );
+    const anchorOffsetX = (targetScale - 1) * targetElement.offsetWidth / 2;
+    const anchorOffsetY = (targetScale - 1) * targetElement.offsetHeight / 2;
+    target.position = {
+      x: (centerX + anchorOffsetX) / stageWidth,
+      y: (centerY + anchorOffsetY) / stageHeight,
+    };
+    const binOffset = visualRadius + gap + binWidth / 2;
+    otherBin.style.left = `${centerX - binOffset}px`;
+    otherBin.style.top = `${centerY}px`;
+    recycleBin.style.left = `${centerX + binOffset}px`;
+    recycleBin.style.top = `${centerY}px`;
+    return target.position;
+  }
+
+  moveGreenTarget(target, point, targets) {
+    const stageWidth = this.stage.clientWidth;
+    const stageHeight = this.stage.clientHeight;
+    const targetElement = [...this.greenTargetsLayer.children]
+      .find((element) => element.dataset.targetId === String(target.id));
+    const scale = targetElement ? Number.parseFloat(getComputedStyle(targetElement).scale) : 1;
+    const offsetX = targetElement ? (scale - 1) * targetElement.offsetWidth / 2 : 0;
+    const offsetY = targetElement ? (scale - 1) * targetElement.offsetHeight / 2 : 0;
+    const visualWidth = targetElement?.getBoundingClientRect().width ?? target.size;
+    const visualHeight = targetElement?.getBoundingClientRect().height ?? target.size;
+    const marginX = Math.min(visualWidth / 2, stageWidth / 2);
+    const marginY = Math.min(visualHeight / 2, stageHeight / 2);
+    const centerX = Math.max(marginX, Math.min(stageWidth - marginX, point.x * stageWidth));
+    const centerY = Math.max(marginY, Math.min(stageHeight - marginY, point.y * stageHeight));
+    target.position = {
+      x: (centerX + offsetX) / stageWidth,
+      y: (centerY + offsetY) / stageHeight,
+    };
+    this.updateGreenTargetPositions(targets);
+    return target.position;
+  }
+
+  animateGreenTargetToBin(target, binId) {
+    const dot = [...this.greenTargetsLayer.children]
+      .find((element) => element.dataset.targetId === String(target.id));
+    const bin = this.greenBins.find((element) => element.dataset.bin === binId);
+    if (!dot || !bin) throw new Error("Không tìm thấy mục tiêu hoặc thùng rác để hoàn tất phân loại.");
+
+    const targetBounds = dot.getBoundingClientRect();
+    const binBounds = bin.getBoundingClientRect();
+    const layerBounds = this.greenTargetsLayer.getBoundingClientRect();
+    const destinationCenterX = binBounds.left + binBounds.width / 2 - layerBounds.left;
+    const destinationCenterY = binBounds.top + binBounds.height / 2 - layerBounds.top;
+    const finalScale = .12;
+    const destinationLeft = destinationCenterX + (finalScale - 1) * dot.offsetWidth / 2;
+    const destinationTop = destinationCenterY + (finalScale - 1) * dot.offsetHeight / 2;
+    const currentScale = getComputedStyle(dot).scale;
+    dot.dataset.resolving = "true";
+    this.setGreenBinSelection(binId);
+
+    return new Promise((resolve) => {
+      const animation = dot.animate(
+        [
+          {
+            left: getComputedStyle(dot).left,
+            top: getComputedStyle(dot).top,
+            scale: currentScale,
+            opacity: 1,
+          },
+          {
+            left: `${destinationLeft}px`,
+            top: `${destinationTop}px`,
+            scale: ".12",
+            opacity: .25,
+          },
+        ],
+        { duration: 420, easing: "ease-in", fill: "forwards" },
+      );
+      animation.onfinish = () => {
+        target.position = {
+          x: (destinationCenterX + (finalScale - 1) * dot.offsetWidth / 2) / this.stage.clientWidth,
+          y: (destinationCenterY + (finalScale - 1) * dot.offsetHeight / 2) / this.stage.clientHeight,
+        };
+        dot.remove();
+        resolve();
+      };
+      animation.oncancel = resolve;
+    });
+  }
+
+  getGreenBinAt(target) {
+    if (!target?.position) return null;
+    const targetElement = [...this.greenTargetsLayer.children]
+      .find((element) => element.dataset.targetId === String(target.id));
+    if (!targetElement) return null;
+    const targetBounds = targetElement.getBoundingClientRect();
+    let bestBin = null;
+    let bestOverlap = 0;
+    for (const bin of this.greenBins) {
+      const bounds = bin.getBoundingClientRect();
+      const overlapWidth = Math.max(0, Math.min(targetBounds.right, bounds.right) - Math.max(targetBounds.left, bounds.left));
+      const overlapHeight = Math.max(0, Math.min(targetBounds.bottom, bounds.bottom) - Math.max(targetBounds.top, bounds.top));
+      const overlap = overlapWidth * overlapHeight;
+      if (overlap > bestOverlap) {
+        bestOverlap = overlap;
+        bestBin = bin;
+      }
+    }
+
+    return bestBin && bestOverlap >= bestBin.offsetWidth * bestBin.offsetHeight * 0.3
+      ? bestBin.dataset.bin
+      : null;
+  }
+
+  setGreenBinSelection(binId) {
+    this.greenBins.forEach((bin) => {
+      bin.dataset.pointed = String(bin.dataset.bin === binId);
+    });
+    this.virtualCursor.dataset.targeting = String(binId !== null);
+  }
+
+  setGreenFeedback(message, correct = null) {
+    this.greenInstruction.textContent = message;
+    this.greenInstruction.dataset.result = correct === null ? "" : String(correct);
+    this.gameMessageIcon.textContent = correct === true ? "🌱" : correct === false ? "↻" : "♻️";
+    this.gameMessageText.textContent = message;
+    this.gameMessage.dataset.state = correct === true ? "green-correct" : correct === false ? "green-incorrect" : "green-ready";
+    this.stage.dataset.feedback = correct === true ? "correct" : correct === false ? "incorrect" : "";
+  }
+
+  showGreenScorePopup(points) {
+    window.clearTimeout(this.greenScorePopupTimer);
+    this.greenScorePopup.textContent = points > 0 ? "+1" : "−1";
+    this.greenScorePopup.dataset.result = points > 0 ? "correct" : "incorrect";
+    this.greenScorePopup.hidden = false;
+    this.greenScorePopup.classList.remove("is-visible");
+    void this.greenScorePopup.offsetWidth;
+    this.greenScorePopup.classList.add("is-visible");
+    this.greenScorePopupTimer = window.setTimeout(() => {
+      this.greenScorePopup.hidden = true;
+      this.greenScorePopup.classList.remove("is-visible");
+      this.greenScorePopupTimer = 0;
+    }, 1000);
+  }
+
+  hideGreenScorePopup() {
+    window.clearTimeout(this.greenScorePopupTimer);
+    this.greenScorePopupTimer = 0;
+    this.greenScorePopup.hidden = true;
+    this.greenScorePopup.classList.remove("is-visible");
+  }
+
+  showGreenCompletion(score, correct) {
+    this.hideGreenScorePopup();
+    this.greenPanel.hidden = true;
+    this.greenTargetsLayer.hidden = true;
+    this.greenTargetsLayer.replaceChildren();
+    this.greenBinPicker.hidden = true;
+    this.greenFinalScore.textContent = String(score);
+    this.greenFinalCorrect.textContent = String(correct);
+    this.greenCompleteOverlay.hidden = false;
+    this.gameMessageText.textContent = "PHÂN LOẠI RÁC ĐÚNG – CHUNG TAY BẢO VỆ TRÁI ĐẤT!";
+  }
+
+  hideGreenChallenge() {
+    window.clearTimeout(this.greenCursorFeedbackTimer);
+    this.greenCursorFeedbackTimer = 0;
+    this.hideGreenScorePopup();
+    if (this.greenPanel) this.greenPanel.hidden = true;
+    if (this.greenTargetsLayer) {
+      this.greenTargetsLayer.hidden = true;
+      this.greenTargetsLayer.replaceChildren();
+    }
+    if (this.greenBinPicker) this.greenBinPicker.hidden = true;
+    if (this.greenCompleteOverlay) this.greenCompleteOverlay.hidden = true;
+    if (this.virtualCursor) {
+      this.virtualCursor.classList.remove("green-cursor-feedback");
+      delete this.virtualCursor.dataset.result;
+      delete this.virtualCursor.dataset.targeting;
+    }
+    delete this.stage.dataset.greenDragging;
+    this.stage.removeAttribute("data-feedback");
   }
 
   #setBeginGuide(isBegin) {
@@ -879,7 +1372,11 @@ export class GameUI {
     this.scoreValue.textContent = String(score);
     this.batteryCountValue.innerHTML =
       `${batteriesDelivered} <small>ĐÃ NẠP</small>`;
-    this.#setEnergy(energy);
+    if (this.stage.dataset.mode === "green") {
+      this.batteryCountLabel.textContent = "MỤC TIÊU ĐÚNG";
+    } else {
+      this.#setEnergy(energy);
+    }
   }
 
   #setEnergy(energy) {
@@ -940,6 +1437,7 @@ export class GameUI {
   }
 
   showQuiz(question, progress = "") {
+    this.setGreenCursorFeedback(null);
     this.quizQuestion.textContent = question.prompt;
     this.quizEyebrow.textContent = progress || "THỬ THÁCH IF–THEN";
     this.quizAnswers.replaceChildren();
@@ -950,7 +1448,9 @@ export class GameUI {
       option.innerHTML = `<span class="quiz-answer-key">${String.fromCharCode(65 + index)}</span><span>${answer}</span>`;
       this.quizAnswers.append(option);
     });
-    this.quizInstruction.textContent = "Trỏ lòng bàn tay vào đáp án, rồi nắm tay để xác nhận.";
+    this.quizInstruction.textContent = this.stage.dataset.mode === "green"
+      ? "Đưa tâm bàn tay vào đáp án rồi nắm tay để xác nhận. Trả lời sai sẽ được thử lại."
+      : "Trỏ lòng bàn tay vào đáp án, rồi nắm tay để xác nhận.";
     delete this.quizInstruction.dataset.result;
     delete this.quizAnswers.dataset.locked;
     this.stage.dataset.quiz = "true";
@@ -997,6 +1497,35 @@ export class GameUI {
       delete this.quizInstruction.dataset.result;
       delete this.quizAnswers.dataset.locked;
     }
+  }
+
+  setGreenQuizAnswerFeedback(index, correct) {
+    for (const option of this.quizAnswers.children) {
+      option.classList.remove("is-correct-result", "is-incorrect-result");
+    }
+    this.quizAnswers.children[index]?.classList.add(
+      correct ? "is-correct-result" : "is-incorrect-result",
+    );
+  }
+
+  setGreenCursorFeedback(correct) {
+    window.clearTimeout(this.greenCursorFeedbackTimer);
+    this.greenCursorFeedbackTimer = 0;
+    this.virtualCursor.classList.remove("green-cursor-feedback");
+    delete this.virtualCursor.dataset.result;
+    if (correct === null) return;
+
+    const result = correct ? "correct" : "incorrect";
+    this.virtualCursor.dataset.result = result;
+    void this.virtualCursor.offsetWidth;
+    this.virtualCursor.classList.add("green-cursor-feedback");
+    this.greenCursorFeedbackTimer = window.setTimeout(() => {
+      this.virtualCursor.classList.remove("green-cursor-feedback");
+      if (this.virtualCursor.dataset.result === result) {
+        delete this.virtualCursor.dataset.result;
+      }
+      this.greenCursorFeedbackTimer = 0;
+    }, 900);
   }
 
   #hintFor(result) {

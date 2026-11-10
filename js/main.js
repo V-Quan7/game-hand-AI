@@ -39,6 +39,25 @@ let activationTimer = 0;
 let isGameplayActive = false;
 let isModeSelection = false;
 let requiresActivationRelease = false;
+const MODE_SETTINGS_STORAGE_KEY = "energyRobot.enabledModes.v1";
+const AVAILABLE_GAME_MODES = new Set(["begin", "easy", "green"]);
+const DEFAULT_ENABLED_MODES = ["green"];
+
+function loadEnabledGameModes() {
+  try {
+    const stored = localStorage.getItem(MODE_SETTINGS_STORAGE_KEY);
+    if (stored === null) return new Set(DEFAULT_ENABLED_MODES);
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return new Set(DEFAULT_ENABLED_MODES);
+    const enabledModes = new Set(parsed.filter((mode) => AVAILABLE_GAME_MODES.has(mode)));
+    return enabledModes.size > 0 ? enabledModes : new Set(DEFAULT_ENABLED_MODES);
+  } catch {
+    return new Set(DEFAULT_ENABLED_MODES);
+  }
+}
+
+let enabledGameModes = loadEnabledGameModes();
+ui.setEnabledModes(enabledGameModes);
 
 camera = new Camera(ui.video, () => {
   stopProcessing();
@@ -209,6 +228,7 @@ function updateHandResult(result, landmarks) {
   const categoryName = category?.categoryName ?? "Unknown";
   const palm = palmCenter(landmarks);
   const stabilized = stabilizer.update(categoryName, score, landmarks);
+  const isGreenMode = isGameplayActive && gameEngine.mode === "green";
   const isFingerPointing =
     isGameplayActive &&
     gameEngine.mode === "begin" &&
@@ -318,7 +338,7 @@ function updateModeSelection({ cursor, gesture, isStable, hasHand }) {
 }
 
 function selectGameMode(mode) {
-  if (!isProcessing || !isModeSelection) return;
+  if (!isProcessing || !isModeSelection || !enabledGameModes.has(mode)) return;
   gameEngine.setMode(mode);
   isModeSelection = false;
   isGameplayActive = true;
@@ -326,8 +346,8 @@ function selectGameMode(mode) {
   ui.hideModeSelection();
   ui.setGameplayActive(true);
   ui.setMessage(
-    mode === "hard"
-      ? "SIÊU KHÓ: Nắm tay trên kiếm cạnh robot để nhặt."
+      mode === "green"
+      ? "GREEN GUARDIAN: Đưa tâm bàn tay đến mục tiêu, nắm tay để chọn; ở màn 2 xòe tay trên nhóm để xác nhận."
       : mode === "begin"
         ? "BEGIN: Chỉ một ngón để xem gợi ý; nắm tay để nhặt và xòe tay ở robot để thả."
         : "Đưa tay đến gần pin, nắm để nhặt và xòe tay trong vùng robot để nạp.",
@@ -420,8 +440,33 @@ ui.pauseButton.addEventListener("click", togglePause);
 ui.restartButton.addEventListener("click", restartSession);
 ui.easyPlayAgainButton.addEventListener("click", restartSession);
 ui.beginPlayAgainButton.addEventListener("click", restartSession);
+ui.greenPlayAgainButton?.addEventListener("click", restartSession);
 ui.modeButtons.forEach((button) => {
   button.addEventListener("click", () => selectGameMode(button.dataset.mode));
+});
+ui.modeSettingsToggle.addEventListener("click", () => {
+  ui.setModeSettingsOpen(ui.modeSettingsPanel.hidden);
+});
+ui.modeSettingInputs.forEach((input) => {
+  input.addEventListener("change", () => {
+    const updatedModes = new Set(enabledGameModes);
+    if (input.checked) updatedModes.add(input.dataset.mode);
+    else updatedModes.delete(input.dataset.mode);
+
+    if (updatedModes.size === 0) {
+      input.checked = true;
+      return;
+    }
+
+    enabledGameModes = updatedModes;
+    ui.setEnabledModes(enabledGameModes);
+    if (isModeSelection) ui.setModeSelection(-1, !requiresActivationRelease);
+    try {
+      localStorage.setItem(MODE_SETTINGS_STORAGE_KEY, JSON.stringify([...enabledGameModes]));
+    } catch {
+      // Settings remain active for this page session if browser storage is unavailable.
+    }
+  });
 });
 ui.soundButton.addEventListener("click", toggleSound);
 ui.fullscreenButton.addEventListener("click", toggleFullscreen);

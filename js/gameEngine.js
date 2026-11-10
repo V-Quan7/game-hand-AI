@@ -83,6 +83,44 @@ const EASY_BLOCK_ASSETS = {
 };
 const EASY_SCORE_PER_QUESTION = 100;
 const EASY_FEEDBACK_DURATION = 2000;
+const GREEN_ROUND_SECONDS = 60;
+const GREEN_TARGET_COUNT = 8;
+const GREEN_TARGET_LIFETIME = 5.4;
+const GREEN_TARGET_EXIT_DURATION = 0.4;
+const GREEN_ITEMS = {
+  organic: [
+    { icon: "🍌", name: "Vỏ chuối", group: "organic" },
+    { icon: "🍃", name: "Lá cây", group: "organic" },
+    { icon: "🍎", name: "Thức ăn thừa", group: "organic" },
+    { icon: "🥬", name: "Rau củ", group: "organic" },
+  ],
+  distractors: [
+    { icon: "🧴", name: "Chai nhựa", group: "recycle" },
+    { icon: "🥫", name: "Lon nhôm", group: "recycle" },
+    { icon: "🧻", name: "Khăn giấy bẩn", group: "other" },
+  ],
+  sorting: [
+    { icon: "🧴", name: "Chai nhựa", group: "recycle" },
+    { icon: "🥫", name: "Lon nhôm", group: "recycle" },
+    { icon: "📄", name: "Giấy sạch", group: "recycle" },
+    { icon: "🧻", name: "Khăn giấy bẩn", group: "other" },
+    { icon: "🧈", name: "Giấy dính dầu mỡ", group: "other" },
+    { icon: "🥤", name: "Cốc giấy bẩn", group: "other" },
+  ],
+};
+const GREEN_QUIZZES = [
+  [
+    { prompt: "Nếu chọn đúng rác hữu cơ thì điều gì xảy ra?", answers: ["Cộng 1 điểm", "Trừ 1 điểm", "Kết thúc trò chơi"], correctIndex: 0 },
+    { prompt: "Nếu chọn nhầm chai nhựa trong màn săn rác hữu cơ thì sao?", answers: ["Cộng 1 điểm", "Không cộng, không trừ điểm", "Cộng 2 điểm"], correctIndex: 1 },
+    { prompt: "Câu lệnh nào phù hợp với màn chơi này?", answers: ["Nếu chọn đúng rác hữu cơ thì cộng 1 điểm.", "Luôn cộng điểm.", "Nếu chọn sai thì cộng điểm."], correctIndex: 0 },
+  ],
+  [
+    { prompt: "Nếu rác tái chế được thì chọn TÁI CHẾ, ngược lại chọn nhóm nào?", answers: ["Hữu cơ", "KHÔNG TÁI CHẾ", "Không chọn nhóm nào"], correctIndex: 1 },
+    { prompt: "Câu lệnh nào thể hiện If Then Else?", answers: ["Nếu là chai nhựa thì chọn TÁI CHẾ, ngược lại chọn KHÔNG TÁI CHẾ.", "Nếu đúng thì cộng điểm.", "Luôn chọn TÁI CHẾ."], correctIndex: 0 },
+    { prompt: "If Then Else khác If Then ở điểm nào?", answers: ["Có cách xử lý cả khi điều kiện đúng và sai.", "Chỉ xử lý khi đúng.", "Không cần điều kiện."], correctIndex: 0 },
+  ],
+];
+const GREEN_QUIZ_DELAY = 850;
 const BEGIN_INTRO_DURATION = 3000;
 const BEGIN_TASKS = [
   {
@@ -183,6 +221,13 @@ export class GameEngine {
     this.pointedBeginObjectId = null;
     this.beginPointedAt = 0;
     this.beginHintShown = false;
+    this.greenStage = 0;
+    this.greenSeconds = GREEN_ROUND_SECONDS;
+    this.greenTargets = [];
+    this.greenCorrect = 0;
+    this.greenSelectedTargetId = null;
+    this.greenSpawnDelay = 0;
+    this.greenQuizIndex = 0;
     this.ui.hideEasyChallenge();
     this.ui.hideBeginChallenge();
     this.ui.setGameMode("easy");
@@ -191,7 +236,7 @@ export class GameEngine {
   }
 
   setMode(mode) {
-    if (mode !== "easy" && mode !== "hard" && mode !== "begin") {
+    if (mode !== "easy" && mode !== "hard" && mode !== "begin" && mode !== "green") {
       throw new Error(`Chế độ chơi không hợp lệ: ${mode}`);
     }
     this.mode = mode;
@@ -203,6 +248,10 @@ export class GameEngine {
     const now = performance.now();
     const deltaSeconds = Math.min((now - this.lastFlightUpdate) / 1000, 0.1);
     this.lastFlightUpdate = now;
+    if (this.mode === "green") {
+      this.#updateGreen(deltaSeconds, { cursor, gesture, isStable, hasHand });
+      return;
+    }
     if (this.mode === "hard") {
       this.#updateHard(deltaSeconds, { cursor, gesture, isStable, hasHand });
       return;
@@ -217,6 +266,10 @@ export class GameEngine {
   reset() {
     window.clearTimeout(this.nextRoundTimer);
     this.nextRoundTimer = 0;
+    if (this.mode === "green") {
+      this.#resetGreenMode();
+      return;
+    }
     if (this.mode === "hard") {
       this.#resetHardMode();
       return;
@@ -235,6 +288,269 @@ export class GameEngine {
     this.batteriesDelivered = 0;
     this.ui.setRobotState(this.robot);
     this.#startEasyQuestion();
+  }
+
+  #resetGreenMode() {
+    window.clearTimeout(this.nextRoundTimer);
+    this.phase = "green-play";
+    this.greenStage = 0;
+    this.greenSeconds = GREEN_ROUND_SECONDS;
+    this.greenCorrect = 0;
+    this.greenQuizIndex = 0;
+    this.greenSelectedTargetId = null;
+    this.greenSpawnDelay = 0;
+    this.requiresGestureRelease = false;
+    this.score = 0;
+    this.lastFlightUpdate = performance.now();
+    this.ui.hideQuiz();
+    this.ui.hideEasyChallenge();
+    this.ui.hideBeginChallenge();
+    this.ui.setGameMode("green");
+    this.ui.setGameStats(this.score, 0, 0);
+    this.#startGreenRound();
+  }
+
+  #startGreenRound() {
+    this.phase = "green-play";
+    this.greenSeconds = GREEN_ROUND_SECONDS;
+    this.greenSelectedTargetId = null;
+    this.greenTargets = [];
+    this.ui.hideQuiz();
+    this.ui.showGreenRound(this.greenStage, this.greenSeconds);
+    this.ui.updateGreenTimer(this.greenSeconds);
+    this.greenTargets = [this.#spawnGreenTarget()];
+    this.greenSpawnDelay = this.#nextGreenSpawnDelay();
+    this.ui.setGreenTargets(this.greenTargets, null);
+    this.ui.showGreenBins(false);
+    this.ui.setGreenFeedback("Chỉ ngón trỏ vào chấm mục tiêu, rồi nắm tay để chọn.");
+  }
+
+  #spawnGreenTarget() {
+    const pool = this.greenStage === 0
+      ? [...GREEN_ITEMS.organic, ...GREEN_ITEMS.distractors]
+      : GREEN_ITEMS.sorting;
+    const item = pool[Math.floor(this.random() * pool.length)];
+    const size = (40 + this.random() * 22) * 2.5;
+    return {
+      id: `green-${Math.random().toString(36).slice(2)}-${this.greenTargets.length}-${performance.now()}`,
+      icon: item.icon,
+      name: item.name,
+      group: item.group,
+      position: this.ui.getGreenTargetSpawnPosition(
+        size,
+        this.greenTargets,
+        this.random,
+      ),
+      size,
+      remainingLifetime: GREEN_TARGET_LIFETIME,
+    };
+  }
+
+  #nextGreenSpawnDelay() {
+    return 0.7 + this.random() * 0.8;
+  }
+
+  #updateGreenTargets(deltaSeconds) {
+    let removedCount = 0;
+    for (const target of this.greenTargets) {
+      if (target.id === this.greenSelectedTargetId || target.isResolving) continue;
+      target.remainingLifetime -= deltaSeconds;
+      if (target.remainingLifetime <= 0) removedCount += 1;
+    }
+
+    if (removedCount > 0) {
+      this.greenTargets = this.greenTargets.filter((target) =>
+        target.remainingLifetime > 0 || target.id === this.greenSelectedTargetId || target.isResolving,
+      );
+      this.greenSpawnDelay = Math.max(this.greenSpawnDelay, GREEN_TARGET_EXIT_DURATION);
+      const selectedIndex = this.greenTargets.findIndex(
+        (target) => target.id === this.greenSelectedTargetId,
+      );
+      this.ui.setGreenTargets(this.greenTargets, selectedIndex);
+    }
+
+    if (this.greenTargets.length >= GREEN_TARGET_COUNT) return;
+    this.greenSpawnDelay -= deltaSeconds;
+    if (this.greenSpawnDelay > 0) return;
+
+    this.greenTargets.push(this.#spawnGreenTarget());
+    this.greenSpawnDelay = this.#nextGreenSpawnDelay();
+    const selectedIndex = this.greenTargets.findIndex(
+      (target) => target.id === this.greenSelectedTargetId,
+    );
+    this.ui.setGreenTargets(this.greenTargets, selectedIndex);
+  }
+
+  #updateGreen(deltaSeconds, { cursor, gesture, isStable, hasHand }) {
+    if (this.phase === "green-play") {
+      this.greenSeconds = Math.max(0, this.greenSeconds - deltaSeconds);
+      this.ui.updateGreenTimer(this.greenSeconds);
+      if (this.greenSeconds <= 0) {
+        this.phase = "green-quiz";
+        this.greenQuizIndex = 0;
+        this.selectedAnswer = -1;
+        this.requiresGestureRelease = true;
+        this.greenTargets = [];
+        this.greenSelectedTargetId = null;
+        this.ui.setGreenTargets([], null);
+        this.ui.showGreenBins(false);
+        this.ui.showQuiz(GREEN_QUIZZES[this.greenStage][0], `MÀN ${this.greenStage + 1} · CÂU 1/3`);
+        this.ui.setGreenFeedback("Hết giờ! Trả lời đúng 3 câu để sang phần tiếp theo.");
+        return;
+      }
+
+      this.#updateGreenTargets(deltaSeconds);
+
+      if (this.greenStage === 1 && this.greenSelectedTargetId) {
+        const target = this.greenTargets.find((item) => item.id === this.greenSelectedTargetId);
+        if (!target) {
+          this.greenSelectedTargetId = null;
+          this.ui.showGreenBins(false);
+          return;
+        }
+
+        if (hasHand && cursor) {
+          this.ui.moveGreenTarget(target, cursor, this.greenTargets);
+          this.ui.setGreenBinSelection(this.ui.getGreenBinAt(target));
+        }
+
+        if (!hasHand || (isStable && gesture === "Open_Palm")) {
+          this.#finishGreenDrag(target);
+        }
+        return;
+      }
+
+      const targetIndex = hasHand && cursor ? this.ui.getGreenTargetAt(cursor) : -1;
+      this.ui.setGreenTargetSelection(targetIndex);
+      if (this.requiresGestureRelease) {
+        if (!hasHand || (isStable && gesture !== "Closed_Fist")) this.requiresGestureRelease = false;
+        else return;
+      }
+      if (targetIndex >= 0 && isStable && gesture === "Closed_Fist") {
+        const target = this.greenTargets[targetIndex];
+        if (this.greenStage === 0) {
+          this.requiresGestureRelease = true;
+          if (target.group === "organic") this.#resolveGreenTarget(target, true);
+          else {
+            this.ui.setGreenCursorFeedback(false);
+            this.ui.setGreenFeedback(`${target.name} chưa phải rác hữu cơ. Hãy thử mục tiêu xanh nhé.`, false);
+            this.feedback.audio?.play("drop");
+            this.feedback.effects?.burst(target.position, 10);
+          }
+        } else {
+          this.greenSelectedTargetId = target.id;
+          this.ui.setGreenTargets(this.greenTargets, targetIndex);
+          this.ui.showGreenBins(true, target);
+          this.ui.setGreenFeedback(`Đã chọn ${target.name}. Giữ nắm tay kéo vào thùng phù hợp rồi xòe tay để thả.`);
+        }
+      }
+      return;
+    }
+
+    if (this.phase === "green-quiz" && cursor && hasHand) {
+      this.selectedAnswer = this.ui.getAnswerAt(cursor);
+      this.ui.setQuizSelection(this.selectedAnswer);
+      if (this.requiresGestureRelease) {
+        if (gesture !== "Closed_Fist") this.requiresGestureRelease = false;
+        else return;
+      }
+      if (isStable && gesture === "Closed_Fist") this.#answerGreenQuestion();
+    }
+  }
+
+  #finishGreenDrag(target) {
+    const chosenBin = this.ui.getGreenBinAt(target);
+    const expectedBin = target.group === "recycle" ? "recycle" : "other";
+    this.requiresGestureRelease = true;
+
+    if (!chosenBin) {
+      this.greenSelectedTargetId = null;
+      this.ui.showGreenBins(false);
+      this.ui.setGreenTargets(this.greenTargets, null);
+      this.ui.setGreenFeedback("Hãy kéo rác vào một trong hai thùng rồi xòe tay để thả.");
+      return;
+    }
+
+    this.greenSelectedTargetId = null;
+    target.isResolving = true;
+    this.ui.setGreenTargets(this.greenTargets, null);
+    const isCorrect = chosenBin === expectedBin;
+    const destinationBin = isCorrect ? chosenBin : expectedBin;
+    void this.ui.animateGreenTargetToBin(target, destinationBin).then(() => {
+      if (this.phase !== "green-play" || !this.greenTargets.includes(target)) return;
+      this.#resolveGreenTarget(target, isCorrect);
+    });
+  }
+
+  #resolveGreenTarget(target, correct) {
+    this.greenTargets = this.greenTargets.filter((item) => item.id !== target.id);
+    this.greenSelectedTargetId = null;
+    this.greenSpawnDelay = Math.max(this.greenSpawnDelay, GREEN_TARGET_EXIT_DURATION);
+    this.ui.showGreenBins(false);
+    this.ui.setGreenTargets(this.greenTargets, null);
+    if (correct) {
+      this.score += 1;
+      this.greenCorrect += 1;
+      this.ui.setGameStats(this.score, this.greenCorrect, 0);
+      this.ui.showGreenRound(this.greenStage, this.greenSeconds);
+      this.ui.showGreenScorePopup(1);
+      this.ui.setGreenCursorFeedback(true);
+      this.ui.setGreenFeedback(`Chính xác: ${target.name} · +1 điểm!`, true);
+      this.feedback.audio?.play("success");
+      this.feedback.effects?.burst(target.position, 26);
+      return;
+    }
+
+    if (this.greenStage === 1) {
+      this.score = Math.max(0, this.score - 1);
+      this.ui.setGameStats(this.score, this.greenCorrect, 0);
+      this.ui.showGreenScorePopup(-1);
+    }
+    this.ui.setGreenCursorFeedback(false);
+    this.ui.setGreenFeedback(
+      this.greenStage === 1
+        ? `${target.name} đã vào nhầm thùng. −1 điểm.`
+        : `${target.name} đã vào nhầm thùng. Không cộng điểm.`,
+      false,
+    );
+    this.feedback.audio?.play("drop");
+    this.feedback.effects?.burst(target.position, 12);
+  }
+
+  #answerGreenQuestion() {
+    const quiz = GREEN_QUIZZES[this.greenStage][this.greenQuizIndex];
+    this.requiresGestureRelease = true;
+    if (this.selectedAnswer !== quiz.correctIndex) {
+      this.ui.setQuizFeedback("Chưa chính xác. Thử lại câu này nhé.", false, false, this.selectedAnswer);
+      this.ui.setGreenQuizAnswerFeedback(this.selectedAnswer, false);
+      this.ui.setGreenCursorFeedback(false);
+      this.feedback.audio?.play("drop");
+      return;
+    }
+    this.phase = "green-quiz-result";
+    this.greenQuizIndex += 1;
+    this.ui.setQuizFeedback("Chính xác!", true, true, this.selectedAnswer);
+    this.ui.setGreenCursorFeedback(true);
+    this.feedback.audio?.play("success");
+    this.feedback.effects?.burst({ x: 0.5, y: 0.5 }, 18);
+    this.nextRoundTimer = window.setTimeout(() => {
+      if (this.phase !== "green-quiz-result") return;
+      if (this.greenQuizIndex < GREEN_QUIZZES[this.greenStage].length) {
+        this.phase = "green-quiz";
+        const question = GREEN_QUIZZES[this.greenStage][this.greenQuizIndex];
+        this.selectedAnswer = -1;
+        this.ui.showQuiz(question, `MÀN ${this.greenStage + 1} · CÂU ${this.greenQuizIndex + 1}/3`);
+        this.requiresGestureRelease = true;
+      } else if (this.greenStage === 0) {
+        this.greenStage = 1;
+        this.#startGreenRound();
+        this.requiresGestureRelease = true;
+      } else {
+        this.phase = "green-complete";
+        this.ui.hideQuiz();
+        this.ui.showGreenCompletion(this.score, this.greenCorrect);
+      }
+    }, GREEN_QUIZ_DELAY);
   }
 
   #resetHardMode() {

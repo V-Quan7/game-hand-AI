@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="ENERGY ROBOT - phiên bản 5 trò chơi AI điều khiển bằng cử chỉ tay." />
+  <meta name="description" content="ENERGY ROBOT - trò chơi AI điều khiển bằng cử chỉ tay." />
   <meta name="theme-color" content="#07111f" />
-  <title>ENERGY ROBOT | Hand AI - Version 5</title>
+  <title>ENERGY ROBOT | Hand AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -24,7 +24,7 @@
           <span>GIẢI CỨU ROBOT BẰNG CỬ CHỈ TAY</span>
         </span>
       </a>
-      <div class="version-chip"><span></span> VERSION 5 · MISSION CONTROL</div>
+      <div class="version-chip"><span></span> VERSION 6 · GREEN GUARDIAN</div>
     </header>
 
     <section class="intro">
@@ -122,10 +122,9 @@
                   <span><strong>Thử thách</strong><small>Nhặt pin và nạp năng lượng cho robot</small></span>
                   <span class="mode-option-arrow" aria-hidden="true">→</span>
                 </button>
-                <button class="mode-option mode-option--hard" type="button" data-mode="hard">
-                  <span class="mode-option-icon" aria-hidden="true">⚔</span>
-                  <span><strong>Giải trí</strong><small>Dùng kiếm đón pin rơi, nạp kiếm và trả lời 5 câu
-                      hỏi</small></span>
+                <button class="mode-option mode-option--green" type="button" data-mode="green">
+                  <span class="mode-option-icon" aria-hidden="true">🌱</span>
+                  <span><strong>Green Guardian</strong><small>Săn rác và học cách phân loại đúng</small></span>
                   <span class="mode-option-arrow" aria-hidden="true">→</span>
                 </button>
               </div>
@@ -248,6 +247,39 @@
             <p class="begin-how-to-play" id="begin-how-to-play">Nắm tay trên đồ vật, mang đến robot rồi xòe tay.</p>
           </section>
           <div class="begin-objects-layer" id="begin-objects-layer" aria-label="Đồ vật tương tác" hidden></div>
+          <section class="green-game-panel" id="green-game-panel" aria-live="polite" hidden>
+            <div class="green-timer-card">
+              <strong class="green-timer" id="green-timer">60</strong>
+            </div>
+            <div class="green-info-card">
+              <div class="green-game-heading">
+                <span class="green-round-label" id="green-round-label">NHIỆM VỤ 1 · CHỌN TẤT CẢ RÁC HỮU CƠ</span>
+              </div>
+              <div class="green-legend" id="green-legend"></div>
+              <p class="green-instruction" id="green-instruction">Chỉ ngón trỏ vào chấm mục tiêu, rồi nắm tay để chọn.
+              </p>
+            </div>
+          </section>
+          <div class="green-targets-layer" id="green-targets-layer" aria-label="Mục tiêu rác trong khu vực chơi" hidden>
+          </div>
+          <div class="green-score-popup" id="green-score-popup" role="status" aria-live="polite" hidden></div>
+          <section class="green-bin-picker" id="green-bin-picker" aria-label="Chọn nhóm phân loại" hidden>
+            <span>Chọn nhóm cho mục tiêu</span>
+            <button class="green-bin green-bin--other" type="button" data-bin="other">🗑️ <strong>KHÔNG TÁI
+                CHẾ</strong></button>
+            <button class="green-bin green-bin--recycle" type="button" data-bin="recycle">♻️ <strong>TÁI
+                CHẾ</strong></button>
+          </section>
+          <section class="green-complete-overlay" id="green-complete-overlay" aria-live="polite" hidden>
+            <div class="green-complete-card">
+              <span class="easy-complete-icon" aria-hidden="true">🌍</span>
+              <span class="eyebrow">GREEN GUARDIAN</span>
+              <h2>PHÂN LOẠI RÁC ĐÚNG – CHUNG TAY BẢO VỆ TRÁI ĐẤT!</h2>
+              <p><strong id="green-final-score">0</strong> điểm · <strong id="green-final-correct">0</strong> mục tiêu
+                đúng</p>
+              <button class="button button-primary" id="green-play-again" type="button">CHƠI LẠI GREEN GUARDIAN</button>
+            </div>
+          </section>
           <section class="begin-complete-overlay" id="begin-complete-overlay" aria-live="polite" hidden>
             <div class="begin-complete-card">
               <span class="easy-complete-icon" aria-hidden="true">🏆</span>
@@ -316,6 +348,28 @@
               <span aria-hidden="true">♫</span> ÂM THANH: BẬT
             </button>
           </div>
+          <section class="mode-settings" aria-label="Cài đặt chế độ chơi">
+            <button class="button button-quiet mode-settings-toggle" id="mode-settings-toggle" type="button"
+              aria-expanded="false" aria-controls="mode-settings-panel">
+              <span aria-hidden="true">⚙</span> CÀI ĐẶT CHẾ ĐỘ
+            </button>
+            <div class="mode-settings-panel" id="mode-settings-panel" hidden>
+              <strong>CHẾ ĐỘ ĐƯỢC PHÉP CHƠI</strong>
+              <label class="mode-setting-row">
+                <span>Khám Phá</span>
+                <input class="mode-setting-toggle" type="checkbox" data-mode="begin" />
+              </label>
+              <label class="mode-setting-row">
+                <span>Thử thách</span>
+                <input class="mode-setting-toggle" type="checkbox" data-mode="easy" />
+              </label>
+              <label class="mode-setting-row">
+                <span>Green Guardian</span>
+                <input class="mode-setting-toggle" type="checkbox" data-mode="green" />
+              </label>
+              <small>Giữ bật ít nhất một chế độ. Mặc định chỉ bật Green Guardian.</small>
+            </div>
+          </section>
           <div class="game-message" id="game-message" role="status" aria-live="polite">
             <span class="game-message-icon" id="game-message-icon" aria-hidden="true">🔋</span>
             <span id="game-message-text">Tìm pin trên sân chơi. Đến gần rồi nắm tay để nhặt.</span>
