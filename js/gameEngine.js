@@ -103,9 +103,14 @@ const GREEN_ITEMS = {
     { icon: "🧴", name: "Chai nhựa", group: "recycle" },
     { icon: "🥫", name: "Lon nhôm", group: "recycle" },
     { icon: "📄", name: "Giấy sạch", group: "recycle" },
+    { icon: "📦", name: "Thùng carton sạch", group: "recycle" },
+    { icon: "🫙", name: "Lọ thủy tinh", group: "recycle" },
+    { icon: "📰", name: "Báo cũ", group: "recycle" },
     { icon: "🧻", name: "Khăn giấy bẩn", group: "other" },
     { icon: "🧈", name: "Giấy dính dầu mỡ", group: "other" },
     { icon: "🥤", name: "Cốc giấy bẩn", group: "other" },
+    { icon: "😷", name: "Khẩu trang đã qua sử dụng", group: "other" },
+    { icon: "🥡", name: "Hộp xốp dính thức ăn", group: "other" },
   ],
 };
 const GREEN_QUIZZES = [
@@ -115,13 +120,13 @@ const GREEN_QUIZZES = [
     { prompt: " Câu lệnh nào đang được sử dụng ở màn chơi này?", answers: ["Nếu chọn đúng rác hữu cơ thì cộng 1 điểm.", "Luôn cộng điểm.", "Nếu chọn sai thì cộng điểm."], correctIndex: 0 },
   ],
   [
-    { prompt: "Nếu rác tái chế được thì chọn TÁI CHẾ, ngược lại chọn nhóm nào?", answers: ["Hữu cơ", "KHÔNG TÁI CHẾ", "Không chọn nhóm nào"], correctIndex: 1 },
-    { prompt: "Câu lệnh nào thể hiện If Then Else?", answers: ["Nếu là chai nhựa thì chọn TÁI CHẾ, ngược lại chọn KHÔNG TÁI CHẾ.", "Nếu đúng thì cộng điểm.", "Luôn chọn TÁI CHẾ."], correctIndex: 0 },
-    { prompt: "If Then Else khác If Then ở điểm nào?", answers: ["Có cách xử lý cả khi điều kiện đúng và sai.", "Chỉ xử lý khi đúng.", "Không cần điều kiện."], correctIndex: 0 },
+    { prompt: "Nếu rác được bỏ đúng thùng rác thì điều gì xảy ra?", answers: ["Được cộng 1 điểm", "Bị trừ 1 điểm", "Không thay đổi điểm"], correctIndex: 0 },
+    { prompt: "Nếu rác được bỏ đúng thùng thì được +1 điểm, nếu không thì...?", answers: ["Bị trừ 1 điểm", "Được cộng thêm 1 điểm", "Trò chơi kết thúc"], correctIndex: 0 },
+    { prompt: "Tại sao trò chơi trên lại sử dụng câu lệnh IF THEN ELSE (Nếu... nếu không thì)?", answers: ["Để chọn cách xử lý phù hợp khi rác được bỏ đúng hoặc sai thùng", "Để luôn cộng điểm", "Để trò chơi tự chọn thùng rác"], correctIndex: 0 },
   ],
 ];
 const GREEN_QUIZ_DELAY = 850;
-const GREEN_INSTRUCTION_SECONDS = 10;
+const GREEN_INSTRUCTION_SECONDS = 20;
 const BEGIN_INTRO_DURATION = 3000;
 const BEGIN_TASKS = [
   {
