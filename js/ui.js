@@ -112,6 +112,9 @@ export class GameUI {
     this.beginPlayAgainButton = document.querySelector("#begin-play-again");
     this.beginReplayInstruction = document.querySelector("#begin-replay-instruction");
     this.greenPanel = document.querySelector("#green-game-panel");
+    this.greenInstructionOverlay = document.querySelector("#green-instruction-overlay");
+    this.greenInstructionImage = document.querySelector("#green-instruction-image");
+    this.greenInstructionCountdown = document.querySelector("#green-instruction-countdown");
     this.greenRoundLabel = document.querySelector("#green-round-label");
     this.greenTimer = document.querySelector("#green-timer");
     this.greenLegend = document.querySelector("#green-legend");
@@ -338,6 +341,24 @@ export class GameUI {
       entry.innerHTML = `<i aria-hidden="true">${icon}</i>${label}`;
       this.greenLegend.append(entry);
     });
+  }
+
+  showGreenInstruction(stageIndex) {
+    this.greenPanel.hidden = true;
+    this.greenTargetsLayer.hidden = true;
+    this.greenInstructionImage.src = stageIndex === 0
+      ? "./assets/images/HD-man1.png"
+      : "./assets/images/HD-man2.png";
+    this.greenInstructionImage.alt = `Hướng dẫn chơi Green Guardian màn ${stageIndex + 1}`;
+    this.greenInstructionCountdown.textContent = "10";
+    this.greenInstructionOverlay.hidden = false;
+    return (seconds) => {
+      if (!this.greenInstructionOverlay.hidden) this.greenInstructionCountdown.textContent = String(seconds);
+    };
+  }
+
+  hideGreenInstruction() {
+    this.greenInstructionOverlay.hidden = true;
   }
 
   updateGreenTimer(seconds) {
@@ -726,6 +747,7 @@ export class GameUI {
   }
 
   hideGreenChallenge() {
+    this.hideGreenInstruction();
     window.clearTimeout(this.greenCursorFeedbackTimer);
     this.greenCursorFeedbackTimer = 0;
     this.hideGreenScorePopup();

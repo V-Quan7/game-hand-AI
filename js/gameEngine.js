@@ -111,8 +111,8 @@ const GREEN_ITEMS = {
 const GREEN_QUIZZES = [
   [
     { prompt: "Nếu chọn đúng rác hữu cơ thì điều gì xảy ra?", answers: ["Cộng 1 điểm", "Trừ 1 điểm", "Kết thúc trò chơi"], correctIndex: 0 },
-    { prompt: "Nếu chọn nhầm chai nhựa trong màn săn rác hữu cơ thì sao?", answers: ["Cộng 1 điểm", "Không cộng, không trừ điểm", "Cộng 2 điểm"], correctIndex: 1 },
-    { prompt: "Câu lệnh nào phù hợp với màn chơi này?", answers: ["Nếu chọn đúng rác hữu cơ thì cộng 1 điểm.", "Luôn cộng điểm.", "Nếu chọn sai thì cộng điểm."], correctIndex: 0 },
+    { prompt: "Nếu chọn nhầm chai nhựa trong màn phân loại rác hữu cơ thì sao?", answers: ["Cộng 1 điểm", "Không cộng, không trừ điểm", "Cộng 2 điểm"], correctIndex: 1 },
+    { prompt: " Câu lệnh nào đang được sử dụng ở màn chơi này?", answers: ["Nếu chọn đúng rác hữu cơ thì cộng 1 điểm.", "Luôn cộng điểm.", "Nếu chọn sai thì cộng điểm."], correctIndex: 0 },
   ],
   [
     { prompt: "Nếu rác tái chế được thì chọn TÁI CHẾ, ngược lại chọn nhóm nào?", answers: ["Hữu cơ", "KHÔNG TÁI CHẾ", "Không chọn nhóm nào"], correctIndex: 1 },
@@ -121,6 +121,7 @@ const GREEN_QUIZZES = [
   ],
 ];
 const GREEN_QUIZ_DELAY = 850;
+const GREEN_INSTRUCTION_SECONDS = 10;
 const BEGIN_INTRO_DURATION = 3000;
 const BEGIN_TASKS = [
   {
@@ -228,6 +229,7 @@ export class GameEngine {
     this.greenSelectedTargetId = null;
     this.greenSpawnDelay = 0;
     this.greenQuizIndex = 0;
+    this.greenInstructionTimer = 0;
     this.ui.hideEasyChallenge();
     this.ui.hideBeginChallenge();
     this.ui.setGameMode("easy");
@@ -239,6 +241,8 @@ export class GameEngine {
     if (mode !== "easy" && mode !== "hard" && mode !== "begin" && mode !== "green") {
       throw new Error(`Chế độ chơi không hợp lệ: ${mode}`);
     }
+    window.clearInterval(this.greenInstructionTimer);
+    this.greenInstructionTimer = 0;
     this.mode = mode;
     this.ui.setGameMode(mode);
     this.reset();
@@ -292,7 +296,7 @@ export class GameEngine {
 
   #resetGreenMode() {
     window.clearTimeout(this.nextRoundTimer);
-    this.phase = "green-play";
+    this.phase = "green-instruction";
     this.greenStage = 0;
     this.greenSeconds = GREEN_ROUND_SECONDS;
     this.greenCorrect = 0;
@@ -307,7 +311,39 @@ export class GameEngine {
     this.ui.hideBeginChallenge();
     this.ui.setGameMode("green");
     this.ui.setGameStats(this.score, 0, 0);
+    this.#showGreenInstruction();
+  }
+
+  #showGreenInstruction() {
+    window.clearInterval(this.greenInstructionTimer);
+    this.phase = "green-instruction";
+    this.requiresGestureRelease = false;
+    this.greenSeconds = GREEN_ROUND_SECONDS;
+    this.greenTargets = [];
+    this.greenSelectedTargetId = null;
+    this.ui.hideQuiz();
+    this.ui.setGreenTargets([], null);
+    const updateCountdown = this.ui.showGreenInstruction(this.greenStage);
+    let remaining = GREEN_INSTRUCTION_SECONDS;
+    this.greenInstructionTimer = window.setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        window.clearInterval(this.greenInstructionTimer);
+        this.greenInstructionTimer = 0;
+        this.continueGreenInstruction();
+      } else {
+        updateCountdown(remaining);
+      }
+    }, 1000);
+  }
+
+  continueGreenInstruction() {
+    if (this.mode !== "green" || this.phase !== "green-instruction") return;
+    window.clearInterval(this.greenInstructionTimer);
+    this.greenInstructionTimer = 0;
+    this.ui.hideGreenInstruction();
     this.#startGreenRound();
+    this.requiresGestureRelease = false;
   }
 
   #startGreenRound() {
@@ -382,6 +418,7 @@ export class GameEngine {
   }
 
   #updateGreen(deltaSeconds, { cursor, gesture, isStable, hasHand }) {
+    if (this.phase === "green-instruction") return;
     if (this.phase === "green-play") {
       this.greenSeconds = Math.max(0, this.greenSeconds - deltaSeconds);
       this.ui.updateGreenTimer(this.greenSeconds);
@@ -543,8 +580,7 @@ export class GameEngine {
         this.requiresGestureRelease = true;
       } else if (this.greenStage === 0) {
         this.greenStage = 1;
-        this.#startGreenRound();
-        this.requiresGestureRelease = true;
+        this.#showGreenInstruction();
       } else {
         this.phase = "green-complete";
         this.ui.hideQuiz();

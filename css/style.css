@@ -2391,6 +2391,52 @@ h2 {
 .green-targets-layer[hidden],
 .green-bin-picker[hidden],
 .green-complete-overlay[hidden] { display: none; }
+.green-instruction-overlay {
+  position: absolute;
+  z-index: 30;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(10px, 2.5vw, 28px);
+  background: rgb(3 12 25 / 88%);
+  backdrop-filter: blur(8px);
+}
+.green-instruction-overlay[hidden] { display: none; }
+.green-instruction-card {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 920px);
+  max-height: 100%;
+}
+.green-instruction-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(70vh, 680px);
+  object-fit: contain;
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 45%);
+}
+.green-instruction-countdown {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: clamp(64px, 10vw, 112px);
+  aspect-ratio: 1;
+  border: 3px solid rgb(255 255 255 / 55%);
+  border-radius: 50%;
+  background: rgb(5 46 112 / 42%);
+  color: rgb(255 244 93 / 82%);
+  font-size: clamp(36px, 7vw, 72px);
+  line-height: 1;
+  text-shadow: 0 2px 3px rgb(18 56 121 / 55%);
+  box-shadow: 0 0 0 4px rgb(0 70 188 / 32%), 0 5px 16px rgb(0 0 0 / 28%);
+  transform: translate(-50%, -50%);
+}
+.green-instruction-card .button[hidden] { display: none; }
 
 .green-game-heading {
   display: grid;
