@@ -343,14 +343,14 @@ export class GameUI {
     });
   }
 
-  showGreenInstruction(stageIndex) {
+  showGreenInstruction(stageIndex, countdownSeconds = 20) {
     this.greenPanel.hidden = true;
     this.greenTargetsLayer.hidden = true;
     this.greenInstructionImage.src = stageIndex === 0
       ? "./assets/images/HD-man1.png"
       : "./assets/images/HD-man2.png";
     this.greenInstructionImage.alt = `Hướng dẫn chơi Green Guardian màn ${stageIndex + 1}`;
-    this.greenInstructionCountdown.textContent = "10";
+    this.greenInstructionCountdown.textContent = String(countdownSeconds);
     this.greenInstructionOverlay.hidden = false;
     return (seconds) => {
       if (!this.greenInstructionOverlay.hidden) this.greenInstructionCountdown.textContent = String(seconds);

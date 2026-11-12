@@ -84,6 +84,7 @@ const EASY_BLOCK_ASSETS = {
 const EASY_SCORE_PER_QUESTION = 100;
 const EASY_FEEDBACK_DURATION = 2000;
 const GREEN_ROUND_SECONDS = 60;
+const GREEN_SCORE_TARGETS = [8, 10];
 const GREEN_TARGET_COUNT = 8;
 const GREEN_TARGET_LIFETIME = 5.4;
 const GREEN_TARGET_EXIT_DURATION = 0.4;
@@ -328,7 +329,10 @@ export class GameEngine {
     this.greenSelectedTargetId = null;
     this.ui.hideQuiz();
     this.ui.setGreenTargets([], null);
-    const updateCountdown = this.ui.showGreenInstruction(this.greenStage);
+    const updateCountdown = this.ui.showGreenInstruction(
+      this.greenStage,
+      GREEN_INSTRUCTION_SECONDS,
+    );
     let remaining = GREEN_INSTRUCTION_SECONDS;
     this.greenInstructionTimer = window.setInterval(() => {
       remaining -= 1;
@@ -428,16 +432,7 @@ export class GameEngine {
       this.greenSeconds = Math.max(0, this.greenSeconds - deltaSeconds);
       this.ui.updateGreenTimer(this.greenSeconds);
       if (this.greenSeconds <= 0) {
-        this.phase = "green-quiz";
-        this.greenQuizIndex = 0;
-        this.selectedAnswer = -1;
-        this.requiresGestureRelease = true;
-        this.greenTargets = [];
-        this.greenSelectedTargetId = null;
-        this.ui.setGreenTargets([], null);
-        this.ui.showGreenBins(false);
-        this.ui.showQuiz(GREEN_QUIZZES[this.greenStage][0], `MÀN ${this.greenStage + 1} · CÂU 1/3`);
-        this.ui.setGreenFeedback("Hết giờ! Trả lời đúng 3 câu để sang phần tiếp theo.");
+        this.#startGreenQuiz("Hết giờ! Trả lời đúng 3 câu để sang phần tiếp theo.");
         return;
       }
 
@@ -540,6 +535,9 @@ export class GameEngine {
       this.ui.setGreenFeedback(`Chính xác: ${target.name} · +1 điểm!`, true);
       this.feedback.audio?.play("success");
       this.feedback.effects?.burst(target.position, 26);
+      if (this.score >= GREEN_SCORE_TARGETS[this.greenStage]) {
+        this.#startGreenQuiz(`Đạt ${GREEN_SCORE_TARGETS[this.greenStage]} điểm! Trả lời 3 câu hỏi để tiếp tục.`);
+      }
       return;
     }
 
@@ -584,6 +582,8 @@ export class GameEngine {
         this.ui.showQuiz(question, `MÀN ${this.greenStage + 1} · CÂU ${this.greenQuizIndex + 1}/3`);
         this.requiresGestureRelease = true;
       } else if (this.greenStage === 0) {
+        this.score = 0;
+        this.ui.setGameStats(this.score, this.greenCorrect, 0);
         this.greenStage = 1;
         this.#showGreenInstruction();
       } else {
@@ -592,6 +592,22 @@ export class GameEngine {
         this.ui.showGreenCompletion(this.score, this.greenCorrect);
       }
     }, GREEN_QUIZ_DELAY);
+  }
+
+  #startGreenQuiz(message) {
+    this.phase = "green-quiz";
+    this.greenQuizIndex = 0;
+    this.selectedAnswer = -1;
+    this.requiresGestureRelease = true;
+    this.greenTargets = [];
+    this.greenSelectedTargetId = null;
+    this.ui.setGreenTargets([], null);
+    this.ui.showGreenBins(false);
+    this.ui.showQuiz(
+      GREEN_QUIZZES[this.greenStage][0],
+      `MÀN ${this.greenStage + 1} · CÂU 1/3`,
+    );
+    this.ui.setGreenFeedback(message);
   }
 
   #resetHardMode() {
