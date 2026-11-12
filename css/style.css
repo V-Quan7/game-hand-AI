@@ -1618,6 +1618,19 @@ h2 {
   font-size: 8px;
 }
 
+.camera-panel[data-mode="green"] > .game-hud .game-stats {
+  grid-template-columns: 1fr;
+}
+
+.camera-panel[data-mode="green"] > .game-hud .game-stat:nth-child(2) {
+  display: none;
+}
+
+.camera-panel[data-mode="green"] > .game-hud .game-stat:first-child > strong {
+  font-size: 60px;
+  text-align: center;
+}
+
 .robot-energy-row {
   margin: 0 1px 5px;
   color: #b6c7d7;

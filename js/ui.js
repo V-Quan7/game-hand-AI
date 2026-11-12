@@ -264,6 +264,7 @@ export class GameUI {
     this.hideBeginChallenge();
     if (isBegin) this.hideEasyChallenge();
     this.stage.dataset.mode = mode;
+    this.cameraPanel.dataset.mode = mode;
     this.gameModeLabel.textContent = isHard ? "SIÊU KHÓ" : isBegin ? "KHÁM PHÁ" : isGreen ? "GREEN GUARDIAN" : "THỬ THÁCH";
     this.robotEnergyLabel.textContent = isHard ? "NẠP KIẾM" : "TIẾN TRÌNH";
     this.batteryCountLabel.textContent = isHard ? "PIN CHẠM KIẾM" : "CÂU ĐÃ XONG";
