@@ -2690,6 +2690,32 @@ h2 {
   backdrop-filter: blur(7px);
   animation: green-panel-in 500ms ease both;
 }
+.green-review-intro,
+.green-review-intro[hidden] { display: none; }
+.green-review-intro:not([hidden]) {
+  position: absolute;
+  z-index: 11;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(3, 16, 16, .78);
+  backdrop-filter: blur(7px);
+  animation: green-panel-in 500ms ease both;
+}
+.green-review-intro-card {
+  width: min(100%, 540px);
+  padding: clamp(20px, 4vw, 34px);
+  border: 1px solid rgba(145, 245, 134, .42);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(16, 50, 38, .98), rgba(6, 28, 30, .98));
+  color: #eaffeb;
+  text-align: center;
+  box-shadow: 0 20px 70px rgba(0,0,0,.48), 0 0 38px rgba(93, 236, 112, .14);
+}
+.green-review-intro-card .eyebrow { color: #a7f58e; }
+.green-review-intro-card h2 { margin: 10px 0; color: #c5ffb8; font-size: clamp(17px, 3vw, 25px); }
+.green-review-intro-card p { margin-bottom: 0; color: #c7dfcd; line-height: 1.6; }
 .green-complete-card {
   width: min(100%, 540px);
   padding: clamp(20px, 4vw, 34px);
@@ -2715,6 +2741,30 @@ h2 {
 .camera-stage[data-mode="green"] .virtual-cursor[data-result="correct"] .cursor-core { background: #9dffcf; box-shadow: 0 0 14px rgba(157,255,207,.95); }
 .camera-stage[data-mode="green"] .virtual-cursor[data-result="incorrect"] .cursor-core { background: #ff9aa6; box-shadow: 0 0 14px rgba(255,154,166,.95); }
 .camera-stage[data-mode="green"] .virtual-cursor.green-cursor-feedback { animation: green-cursor-feedback 450ms ease-in-out 2; }
+.camera-stage[data-mode="green"][data-quiz="true"] .quiz-card {
+  width: min(100%, 640px);
+  max-height: calc(100% - 16px);
+  overflow-y: auto;
+  border-color: rgba(145, 245, 134, .42);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, .48), 0 0 30px rgba(93, 236, 112, .14);
+}
+.camera-stage[data-mode="green"] .quiz-question {
+  font-size: clamp(20px, 2.5vw, 26px);
+}
+.camera-stage[data-mode="green"] .quiz-answer {
+  min-height: 50px;
+  font-size: clamp(16px, 1.7vw, 18px);
+  line-height: 1.4;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  animation: green-answer-in 320ms both;
+}
+.camera-stage[data-mode="green"] .quiz-answer:nth-child(2) { animation-delay: 55ms; }
+.camera-stage[data-mode="green"] .quiz-answer:nth-child(3) { animation-delay: 110ms; }
+.camera-stage[data-mode="green"] .quiz-answer.is-selected { transform: scale(1.015); }
+.camera-stage[data-mode="green"] .quiz-instruction {
+  font-size: clamp(14px, 1.5vw, 16px);
+  line-height: 1.55;
+}
 .camera-stage[data-mode="green"] .robot-character { opacity: .16; filter: saturate(.45); transform: scale(.78); transform-origin: center; pointer-events: none; }
 .camera-stage[data-mode="green"][data-feedback="correct"] .green-info-card { animation: green-correct-flash 480ms ease; }
 .camera-stage[data-mode="green"][data-feedback="incorrect"] .green-info-card { animation: green-soft-shake 300ms ease; }
@@ -2733,6 +2783,10 @@ h2 {
   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   50% { transform: translate(-50%, -50%) scale(1.22); opacity: .48; box-shadow: 0 0 24px var(--cursor-result-glow); }
 }
+@keyframes green-answer-in {
+  from { opacity: 0; transform: translateY(7px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 @keyframes green-panel-in { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
 @keyframes green-timer-pulse { to { box-shadow: 0 0 18px rgba(255,174,74,.58); } }
 @keyframes green-correct-flash { 50% { box-shadow: 0 0 38px rgba(105,255,125,.38); } }
@@ -2740,7 +2794,8 @@ h2 {
 
 @media (prefers-reduced-motion: reduce) {
   .green-target, .green-timer, .green-game-panel, .green-bin-picker, .green-complete-overlay, .green-score-popup,
-  .camera-stage[data-mode="green"] .virtual-cursor.green-cursor-feedback { animation: none; transition: none; }
+  .camera-stage[data-mode="green"] .virtual-cursor.green-cursor-feedback,
+  .camera-stage[data-mode="green"] .quiz-answer { animation: none; transition: none; }
   .green-target[data-entering="true"] { opacity: 1; scale: .82; }
   .green-target[data-exiting="true"] { display: none; }
 }

@@ -123,6 +123,7 @@ export class GameUI {
     this.greenScorePopup = document.querySelector("#green-score-popup");
     this.greenBins = [...document.querySelectorAll(".green-bin")];
     this.greenBinPicker = document.querySelector("#green-bin-picker");
+    this.greenReviewIntro = document.querySelector("#green-review-intro");
     this.greenCompleteOverlay = document.querySelector("#green-complete-overlay");
     this.greenPlayAgainButton = document.querySelector("#green-play-again");
     this.greenFinalScore = document.querySelector("#green-final-score");
@@ -747,8 +748,21 @@ export class GameUI {
     this.gameMessageText.textContent = "PHÂN LOẠI RÁC ĐÚNG – CHUNG TAY BẢO VỆ TRÁI ĐẤT!";
   }
 
+  showGreenReviewIntro() {
+    this.hideQuiz();
+    this.greenPanel.hidden = true;
+    this.greenTargetsLayer.hidden = true;
+    this.greenBinPicker.hidden = true;
+    this.greenReviewIntro.hidden = false;
+  }
+
+  hideGreenReviewIntro() {
+    if (this.greenReviewIntro) this.greenReviewIntro.hidden = true;
+  }
+
   hideGreenChallenge() {
     this.hideGreenInstruction();
+    this.hideGreenReviewIntro();
     window.clearTimeout(this.greenCursorFeedbackTimer);
     this.greenCursorFeedbackTimer = 0;
     this.hideGreenScorePopup();

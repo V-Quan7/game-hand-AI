@@ -126,6 +126,36 @@ const GREEN_QUIZZES = [
     { prompt: "Tại sao trò chơi trên lại sử dụng câu lệnh IF THEN ELSE (Nếu... nếu không thì)?", answers: ["Để chọn cách xử lý phù hợp khi rác được bỏ đúng hoặc sai thùng", "Để luôn cộng điểm", "Để trò chơi tự chọn thùng rác"], correctIndex: 0 },
   ],
 ];
+const GREEN_REVIEW_QUESTIONS = [
+  {
+    prompt: "Điền vào chỗ trống: Nếu (IF) chọn đúng rác hữu cơ thì (THEN) _____.",
+    answers: ["được cộng 1 điểm", "bị trừ 1 điểm", "trò chơi kết thúc"],
+    correctIndex: 0,
+    hint: "Gợi ý: nhớ lại phần thưởng khi chọn đúng rác hữu cơ ở màn 1.",
+    explanation: "Đúng! Chọn đúng rác hữu cơ thì được cộng 1 điểm. Đây là câu lệnh Nếu… thì… (IF–THEN).",
+  },
+  {
+    prompt: "Điền vào chỗ trống: Nếu (IF) chọn nhầm chai nhựa ở màn rác hữu cơ thì (THEN) _____.",
+    answers: ["không cộng, không trừ điểm", "được cộng 1 điểm", "bị trừ 1 điểm"],
+    correctIndex: 0,
+    hint: "Gợi ý: ở màn 1, chọn nhầm mục tiêu gây nhiễu không làm thay đổi điểm.",
+    explanation: "Chính xác! Chọn nhầm chai nhựa ở màn 1 thì không cộng, không trừ điểm. Đây vẫn là Nếu… thì… (IF–THEN).",
+  },
+  {
+    prompt: "Điền vào chỗ trống: Nếu (IF) rác có thể tái chế thì (THEN) bỏ vào thùng tái chế; nếu không thì (ELSE) _____.",
+    answers: ["bỏ vào thùng không tái chế", "bỏ vào thùng tái chế", "không cần chọn thùng"],
+    correctIndex: 0,
+    hint: "Gợi ý: nhánh nếu không dùng khi rác không thuộc nhóm tái chế.",
+    explanation: "Đúng! Nếu không phải rác tái chế thì bỏ vào thùng không tái chế. Câu có hai nhánh là Nếu… thì… nếu không thì… (IF–THEN–ELSE).",
+  },
+  {
+    prompt: "Điền vào chỗ trống: Nếu (IF) bỏ rác đúng thùng thì (THEN) được cộng 1 điểm; nếu không thì (ELSE) _____.",
+    answers: ["bị trừ 1 điểm", "được cộng thêm 1 điểm", "không thay đổi điểm"],
+    correctIndex: 0,
+    hint: "Gợi ý: nhớ lại điểm bị thay đổi khi bỏ rác sai thùng ở màn 2.",
+    explanation: "Chính xác! Bỏ đúng thùng được cộng 1 điểm, nếu không thì bị trừ 1 điểm. Cần xử lý cả hai trường hợp nên dùng Nếu… thì… nếu không thì… (IF–THEN–ELSE).",
+  },
+];
 const GREEN_QUIZ_DELAY = 850;
 const GREEN_INSTRUCTION_SECONDS = 20;
 const BEGIN_INTRO_DURATION = 3000;
@@ -484,14 +514,17 @@ export class GameEngine {
       return;
     }
 
-    if (this.phase === "green-quiz" && cursor && hasHand) {
+    if ((this.phase === "green-quiz" || this.phase === "green-review") && cursor && hasHand) {
       this.selectedAnswer = this.ui.getAnswerAt(cursor);
       this.ui.setQuizSelection(this.selectedAnswer);
       if (this.requiresGestureRelease) {
         if (gesture !== "Closed_Fist") this.requiresGestureRelease = false;
         else return;
       }
-      if (isStable && gesture === "Closed_Fist") this.#answerGreenQuestion();
+      if (isStable && gesture === "Closed_Fist") {
+        if (this.phase === "green-review") this.#answerGreenReviewQuestion();
+        else this.#answerGreenQuestion();
+      }
     }
   }
 
@@ -586,6 +619,49 @@ export class GameEngine {
         this.ui.setGameStats(this.score, this.greenCorrect, 0);
         this.greenStage = 1;
         this.#showGreenInstruction();
+      } else {
+        this.phase = "green-review-intro";
+        this.ui.showGreenReviewIntro();
+        this.nextRoundTimer = window.setTimeout(() => {
+          if (this.phase !== "green-review-intro") return;
+          this.phase = "green-review";
+          this.greenQuizIndex = 0;
+          this.selectedAnswer = -1;
+          this.requiresGestureRelease = true;
+          this.ui.hideGreenReviewIntro();
+          this.ui.showQuiz(GREEN_REVIEW_QUESTIONS[0], "MÀN 3 · ÔN TẬP 1/4");
+        }, 2200);
+      }
+    }, GREEN_QUIZ_DELAY);
+  }
+
+  #answerGreenReviewQuestion() {
+    const question = GREEN_REVIEW_QUESTIONS[this.greenQuizIndex];
+    this.requiresGestureRelease = true;
+    if (this.selectedAnswer !== question.correctIndex) {
+      this.ui.setQuizFeedback(question.hint, false, false, this.selectedAnswer);
+      this.ui.setGreenQuizAnswerFeedback(this.selectedAnswer, false);
+      this.ui.setGreenCursorFeedback(false);
+      this.feedback.audio?.play("drop");
+      return;
+    }
+
+    this.phase = "green-review-result";
+    this.greenQuizIndex += 1;
+    this.ui.setQuizFeedback(question.explanation, true, true, this.selectedAnswer);
+    this.ui.setGreenCursorFeedback(true);
+    this.feedback.audio?.play("success");
+    this.feedback.effects?.burst({ x: 0.5, y: 0.5 }, 18);
+    this.nextRoundTimer = window.setTimeout(() => {
+      if (this.phase !== "green-review-result") return;
+      if (this.greenQuizIndex < GREEN_REVIEW_QUESTIONS.length) {
+        this.phase = "green-review";
+        this.selectedAnswer = -1;
+        this.ui.showQuiz(
+          GREEN_REVIEW_QUESTIONS[this.greenQuizIndex],
+          `MÀN 3 · ÔN TẬP ${this.greenQuizIndex + 1}/${GREEN_REVIEW_QUESTIONS.length}`,
+        );
+        this.requiresGestureRelease = true;
       } else {
         this.phase = "green-complete";
         this.ui.hideQuiz();
