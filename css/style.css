@@ -4044,3 +4044,40 @@ h2 {
     transform: translate(-50%, -50%) perspective(520px) rotateX(0deg) translateZ(8px) scale(1.05);
   }
 }
+
+@media (min-width: 701px) and (max-width: 1366px) and (hover: none) and (pointer: coarse) {
+  .camera-panel.panel > .camera-stage {
+    aspect-ratio: 1.05 / 1;
+    max-height: none;
+  }
+
+  .camera-panel.panel:fullscreen > .camera-stage {
+    aspect-ratio: 1.05 / 1;
+    max-height: none;
+  }
+
+  .camera-panel.panel > .camera-stage[data-mode="green"][data-quiz="true"],
+  .camera-panel.panel:fullscreen > .camera-stage[data-mode="green"][data-quiz="true"] {
+    height: min(82dvh, calc(100dvh - 160px));
+    aspect-ratio: auto;
+  }
+
+  .camera-stage[data-mode="green"][data-quiz="true"] .quiz-overlay {
+    overflow: visible;
+    padding: 10px;
+  }
+
+  .camera-stage[data-mode="green"][data-quiz="true"] .quiz-card {
+    width: min(100%, 760px);
+    max-height: none;
+    overflow: visible;
+    padding: clamp(14px, 2vw, 20px);
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1000px) and (hover: none) and (pointer: coarse) {
+  .camera-panel.panel > .camera-stage[data-mode="green"][data-quiz="true"],
+  .camera-panel.panel:fullscreen > .camera-stage[data-mode="green"][data-quiz="true"] {
+    height: min(68dvh, calc(100dvh - 300px));
+  }
+}

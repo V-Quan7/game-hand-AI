@@ -120,7 +120,7 @@ const GREEN_QUIZZES = [
     { prompt: "Nếu chọn nhầm thì sao?", answers: ["Cộng 1 điểm", "Không cộng, không trừ điểm", "Cộng 2 điểm"], correctIndex: 1 },
     {
       memory: "If–Then (Nếu… thì…): Nếu điều kiện đúng thì thực hiện hành động; nếu sai thì không làm gì.\nIf–Then–Else (Nếu… thì… nếu không thì…): Nếu điều kiện đúng thì làm A; nếu sai thì làm B.",
-      prompt: "Trong màn chơi đầu, cấu trúc nào được sử dụng khi chọn đúng rác hưu cơ thì +1 điểm?",
+      prompt: "Trong màn chơi đầu, cấu trúc nào được sử dụng khi chọn đúng rác hữu cơ thì +1 điểm?",
       answers: ["If – Then", "If – Then – Else", "Cả hai đều bắt buộc phải dùng"],
       correctIndex: 0,
     },
