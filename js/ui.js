@@ -149,6 +149,7 @@ export class GameUI {
     this.greenScorePopupTimer = 0;
     this.quizOverlay = document.querySelector("#quiz-overlay");
     this.quizQuestion = document.querySelector("#quiz-question");
+    this.quizMemory = document.querySelector("#quiz-memory");
     this.quizAnswers = document.querySelector("#quiz-answers");
     this.quizInstruction = document.querySelector("#quiz-instruction");
     this.quizEyebrow = this.quizOverlay.querySelector(".eyebrow");
@@ -1475,6 +1476,8 @@ export class GameUI {
 
   showQuiz(question, progress = "") {
     this.setGreenCursorFeedback(null);
+    this.quizMemory.textContent = question.memory || "";
+    this.quizMemory.hidden = !question.memory;
     this.quizQuestion.textContent = question.prompt;
     this.quizEyebrow.textContent = progress || "THỬ THÁCH IF–THEN";
     this.quizAnswers.replaceChildren();

@@ -110,52 +110,119 @@ const GREEN_ITEMS = {
     { icon: "🧻", name: "Khăn giấy bẩn", group: "other" },
     { icon: "🧈", name: "Giấy dính dầu mỡ", group: "other" },
     { icon: "🥤", name: "Cốc giấy bẩn", group: "other" },
-    { icon: "😷", name: "Khẩu trang đã qua sử dụng", group: "other" },
+    // { icon: "😷", name: "Khẩu trang đã qua sử dụng", group: "other" },
     { icon: "🥡", name: "Hộp xốp dính thức ăn", group: "other" },
   ],
 };
 const GREEN_QUIZZES = [
   [
     { prompt: "Nếu chọn đúng rác hữu cơ thì điều gì xảy ra?", answers: ["Cộng 1 điểm", "Trừ 1 điểm", "Kết thúc trò chơi"], correctIndex: 0 },
-    { prompt: "Nếu chọn nhầm chai nhựa trong màn phân loại rác hữu cơ thì sao?", answers: ["Cộng 1 điểm", "Không cộng, không trừ điểm", "Cộng 2 điểm"], correctIndex: 1 },
-    { prompt: " Câu lệnh nào đang được sử dụng ở màn chơi này?", answers: ["Nếu chọn đúng rác hữu cơ thì cộng 1 điểm.", "Luôn cộng điểm.", "Nếu chọn sai thì cộng điểm."], correctIndex: 0 },
+    { prompt: "Nếu chọn nhầm thì sao?", answers: ["Cộng 1 điểm", "Không cộng, không trừ điểm", "Cộng 2 điểm"], correctIndex: 1 },
+    {
+      memory: "If–Then (Nếu… thì…): Nếu điều kiện đúng thì thực hiện hành động; nếu sai thì không làm gì.\nIf–Then–Else (Nếu… thì… nếu không thì…): Nếu điều kiện đúng thì làm A; nếu sai thì làm B.",
+      prompt: "Trong màn chơi đầu, cấu trúc nào được sử dụng khi chọn đúng rác hưu cơ thì +1 điểm?",
+      answers: ["If – Then", "If – Then – Else", "Cả hai đều bắt buộc phải dùng"],
+      correctIndex: 0,
+    },
   ],
   [
-    { prompt: "Nếu rác được bỏ đúng thùng rác thì điều gì xảy ra?", answers: ["Được cộng 1 điểm", "Bị trừ 1 điểm", "Không thay đổi điểm"], correctIndex: 0 },
-    { prompt: "Nếu rác được bỏ đúng thùng thì được +1 điểm, nếu không thì...?", answers: ["Bị trừ 1 điểm", "Được cộng thêm 1 điểm", "Trò chơi kết thúc"], correctIndex: 0 },
-    { prompt: "Tại sao trò chơi trên lại sử dụng câu lệnh IF THEN ELSE (Nếu... nếu không thì)?", answers: ["Để chọn cách xử lý phù hợp khi rác được bỏ đúng hoặc sai thùng", "Để luôn cộng điểm", "Để trò chơi tự chọn thùng rác"], correctIndex: 0 },
+    { prompt: "Nếu rác được phân loại đúng thì điều gì xảy ra?", answers: ["Được cộng 1 điểm", "Bị trừ 1 điểm", "Không thay đổi điểm"], correctIndex: 0 },
+    { prompt: "Ngược lại, nếu phân loại sai thì...?", answers: ["Bị trừ 1 điểm", "Được cộng thêm 1 điểm", "Trò chơi kết thúc"], correctIndex: 0 },
+    {
+      memory: "If–Then (Nếu… thì…): Nếu điều kiện đúng thì thực hiện hành động; nếu sai thì không làm gì.\nIf–Then–Else (Nếu… thì… nếu không thì…): Nếu điều kiện đúng thì làm A; nếu sai thì làm B.",
+      prompt: "Trong màn chơi thứ hai, cấu trúc nào được sử dụng để xử lý cả khi phân loại đúng và sai?",
+      answers: ["If – Then", "If – Then – Else", "Cả hai đều bắt buộc phải dùng"],
+      correctIndex: 1,
+    },
   ],
 ];
 const GREEN_REVIEW_QUESTIONS = [
   {
-    prompt: "Điền vào chỗ trống: Nếu (IF) chọn đúng rác hữu cơ thì (THEN) _____.",
-    answers: ["được cộng 1 điểm", "bị trừ 1 điểm", "trò chơi kết thúc"],
+    memory: "📘 Ghi nhớ:\nIF–THEN: Đúng → làm, Sai → bỏ qua.\nIF–THEN–ELSE: Đúng → làm A, Sai → làm B",
+    prompt: "Bạn muốn lập trình: Nếu trời nóng thì bật quạt. Nếu trời không nóng thì không cần làm gì. Nên sử dụng cấu trúc nào?",
+    answers: [
+      "IF–THEN",
+      "IF–THEN–ELSE",
+      "Không thể dùng câu lệnh rẽ nhánh"
+    ],
     correctIndex: 0,
-    hint: "Gợi ý: nhớ lại phần thưởng khi chọn đúng rác hữu cơ ở màn 1.",
-    explanation: "Đúng! Chọn đúng rác hữu cơ thì được cộng 1 điểm. Đây là câu lệnh Nếu… thì… (IF–THEN).",
+    hint: "Chỉ cần làm gì đó khi điều kiện đúng.",
+    explanation: "Đúng! Trời nóng → bật quạt. Trời không nóng → bỏ qua. Vì chỉ có hành động khi đúng nên dùng IF–THEN."
   },
+
   {
-    prompt: "Điền vào chỗ trống: Nếu (IF) chọn nhầm chai nhựa ở màn rác hữu cơ thì (THEN) _____.",
-    answers: ["không cộng, không trừ điểm", "được cộng 1 điểm", "bị trừ 1 điểm"],
+    memory: "📘 Ghi nhớ:\nIF–THEN: Đúng → làm, Sai → bỏ qua.\nIF–THEN–ELSE: Đúng → làm A, Sai → làm B",
+    prompt: "Bạn muốn lập trình: Nếu pin yếu thì hiện thông báo “Sạc pin”. Nếu pin không yếu thì không cần làm gì. Nên sử dụng cấu trúc nào?",
+    answers: [
+      "IF–THEN",
+      "IF–THEN–ELSE",
+      "Không cần kiểm tra điều kiện"
+    ],
     correctIndex: 0,
-    hint: "Gợi ý: ở màn 1, chọn nhầm mục tiêu gây nhiễu không làm thay đổi điểm.",
-    explanation: "Chính xác! Chọn nhầm chai nhựa ở màn 1 thì không cộng, không trừ điểm. Đây vẫn là Nếu… thì… (IF–THEN).",
+    hint: "Khi điều kiện sai, chương trình không cần làm gì.",
+    explanation: "Chính xác! Pin yếu → hiện “Sạc pin”. Pin không yếu → bỏ qua. Vì vậy dùng IF–THEN."
   },
+
   {
-    prompt: "Điền vào chỗ trống: Nếu (IF) rác có thể tái chế thì (THEN) bỏ vào thùng tái chế; nếu không thì (ELSE) _____.",
-    answers: ["bỏ vào thùng không tái chế", "bỏ vào thùng tái chế", "không cần chọn thùng"],
-    correctIndex: 0,
-    hint: "Gợi ý: nhánh nếu không dùng khi rác không thuộc nhóm tái chế.",
-    explanation: "Đúng! Nếu không phải rác tái chế thì bỏ vào thùng không tái chế. Câu có hai nhánh là Nếu… thì… nếu không thì… (IF–THEN–ELSE).",
+    memory: "📘 Ghi nhớ:\nIF–THEN: Đúng → làm, Sai → bỏ qua.\nIF–THEN–ELSE: Đúng → làm A, Sai → làm B",
+    prompt: "Bạn muốn lập trình: Nếu điểm từ 5 trở lên thì hiện “Đạt”, nếu dưới 5 thì hiện “Chưa đạt”. Nên sử dụng cấu trúc nào?",
+    answers: [
+      "IF–THEN",
+      "IF–THEN–ELSE",
+      "Không cần kiểm tra điều kiện"
+    ],
+    correctIndex: 1,
+    hint: "Có hành động cho cả trường hợp đúng và sai.",
+    explanation: "Đúng! Điểm từ 5 trở lên → “Đạt”. Điểm dưới 5 → “Chưa đạt”. Có 2 hành động nên dùng IF–THEN–ELSE."
   },
+
   {
-    prompt: "Điền vào chỗ trống: Nếu (IF) bỏ rác đúng thùng thì (THEN) được cộng 1 điểm; nếu không thì (ELSE) _____.",
-    answers: ["bị trừ 1 điểm", "được cộng thêm 1 điểm", "không thay đổi điểm"],
-    correctIndex: 0,
-    hint: "Gợi ý: nhớ lại điểm bị thay đổi khi bỏ rác sai thùng ở màn 2.",
-    explanation: "Chính xác! Bỏ đúng thùng được cộng 1 điểm, nếu không thì bị trừ 1 điểm. Cần xử lý cả hai trường hợp nên dùng Nếu… thì… nếu không thì… (IF–THEN–ELSE).",
-  },
+    memory: "📘 Ghi nhớ:\nIF–THEN: Đúng → làm, Sai → bỏ qua.\nIF–THEN–ELSE: Đúng → làm A, Sai → làm B",
+    prompt: "Bạn muốn lập trình: Nếu nhân vật chạm vào vật cản thì hiện “Thua”, nếu không chạm thì tiếp tục chơi. Nên sử dụng cấu trúc nào?",
+    answers: [
+      "IF–THEN",
+      "IF–THEN–ELSE",
+      "Không cần kiểm tra điều kiện"
+    ],
+    correctIndex: 1,
+    hint: "Có cách xử lý cho cả chạm và không chạm.",
+    explanation: "Chính xác! Chạm vật cản → “Thua”. Không chạm → tiếp tục chơi. Có 2 hướng xử lý nên dùng IF–THEN–ELSE."
+  }
 ];
+
+
+// câu hỏi ôn tập cuối cùng để củng cố kiến thức về IF–THEN và IF–THEN–ELSE
+// const GREEN_REVIEW_QUESTIONS = [
+//   {
+//     prompt: "Điền vào chỗ trống: Nếu (IF) chọn đúng rác hữu cơ thì (THEN) _____.",
+//     answers: ["được cộng 1 điểm", "bị trừ 1 điểm", "trò chơi kết thúc"],
+//     correctIndex: 0,
+//     hint: "Gợi ý: nhớ lại phần thưởng khi chọn đúng rác hữu cơ ở màn 1.",
+//     explanation: "Đúng! Chọn đúng rác hữu cơ thì được cộng 1 điểm. Đây là câu lệnh Nếu… thì… (IF–THEN).",
+//   },
+//   {
+//     prompt: "Điền vào chỗ trống: Nếu (IF) chọn không phải rác hữu cơ thì (THEN) _____.",
+//     answers: ["không cộng, không trừ điểm", "được cộng 1 điểm", "bị trừ 1 điểm"],
+//     correctIndex: 0,
+//     hint: "Gợi ý: ở màn 1, chọn nhầm mục tiêu gây nhiễu không làm thay đổi điểm.",
+//     explanation: "Chính xác! Chọn nhầm chai nhựa ở màn 1 thì không cộng, không trừ điểm. Đây vẫn là Nếu… thì… (IF–THEN).",
+//   },
+//   {
+//     prompt: "Điền vào chỗ trống: Nếu (IF) rác có thể tái chế thì (THEN) bỏ vào thùng tái chế; nếu không thì (ELSE) _____.",
+//     answers: ["bỏ vào thùng không tái chế", "bỏ vào thùng tái chế", "không cần chọn thùng"],
+//     correctIndex: 0,
+//     hint: "Gợi ý: nhánh nếu không dùng khi rác không thuộc nhóm tái chế.",
+//     explanation: "Đúng! Nếu không phải rác tái chế thì bỏ vào thùng không tái chế. Câu có hai nhánh là Nếu… thì… nếu không thì… (IF–THEN–ELSE).",
+//   },
+//   {
+//     prompt: "Điền vào chỗ trống: Nếu (IF) bỏ rác đúng thùng thì (THEN) được cộng 1 điểm; nếu không thì (ELSE) _____.",
+//     answers: ["bị trừ 1 điểm", "được cộng thêm 1 điểm", "không thay đổi điểm"],
+//     correctIndex: 0,
+//     hint: "Gợi ý: nhớ lại điểm bị thay đổi khi bỏ rác sai thùng ở màn 2.",
+//     explanation: "Chính xác! Bỏ đúng thùng được cộng 1 điểm, nếu không thì bị trừ 1 điểm. Cần xử lý cả hai trường hợp nên dùng Nếu… thì… nếu không thì… (IF–THEN–ELSE).",
+//   },
+// ];
+// 
 const GREEN_QUIZ_DELAY = 850;
 const GREEN_INSTRUCTION_SECONDS = 20;
 const BEGIN_INTRO_DURATION = 3000;
